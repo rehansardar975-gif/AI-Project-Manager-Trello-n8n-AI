@@ -4,9 +4,9 @@
 
 | Asset | Source | License |
 |---|---|---|
-| Voice-over (`video/audio/voiceover.wav`) | Generated offline by `scripts/build-audio.py` with the **Kokoro-82M** text-to-speech model (voice `af_heart`), run through `kokoro-onnx` 0.6.1. Model weights from npm package `kokoro-q8-shards` 1.0.0 (sha256 `fbae9257…a1478`, byte-identical to onnx-community/Kokoro-82M-v1.0-ONNX `model_quantized.onnx`); voice style file from npm package `kokoro-js` 1.2.1 | Kokoro-82M model and voices: **Apache-2.0** (hexgrad). kokoro-onnx: MIT. kokoro-js: Apache-2.0. Generated speech may be used commercially. |
+| Voice-over (`video/audio/voiceover.m4a`) | Generated offline by `scripts/build-audio.py` with the **Kokoro-82M** text-to-speech model (voice `af_heart`), run through `kokoro-onnx` 0.6.1. Model weights from npm package `kokoro-q8-shards` 1.0.0 (sha256 `fbae9257…a1478`, byte-identical to onnx-community/Kokoro-82M-v1.0-ONNX `model_quantized.onnx`); voice style file from npm package `kokoro-js` 1.2.1 | Kokoro-82M model and voices: **Apache-2.0** (hexgrad). kokoro-onnx: MIT. kokoro-js: Apache-2.0. Generated speech may be used commercially. |
 | Voice-over script | Written for this project (`SCRIPT` in `scripts/build-audio.py`) | Own work |
-| Background music (`video/audio/music.wav`) | **Original composition**, synthesised in `scripts/build-audio.py` with numpy: Am9–Fmaj7–Cmaj7–G6 pad, plucked arpeggio, generated reverb. No samples, loops or third-party recordings | Own work — no third-party rights |
+| Background music (`video/audio/music.m4a`) | **Original composition**, synthesised in `scripts/build-audio.py` with numpy: Am9–Fmaj7–Cmaj7–G6 pad, plucked arpeggio, generated reverb. No samples, loops or third-party recordings | Own work — no third-party rights |
 
 ## Fonts
 

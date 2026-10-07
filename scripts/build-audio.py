@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 Builds the audio for video/P08-video.mp4:
-  video/audio/voiceover.wav  - Kokoro-82M neural TTS (Apache-2.0), one line per scene, placed on the timeline
-  video/audio/music.wav      - original ambient bed synthesised here with numpy (no samples, no third-party music)
+  video/audio/voiceover.m4a  - Kokoro-82M neural TTS (Apache-2.0), one line per scene, placed on the timeline
+  video/audio/music.m4a      - original ambient bed synthesised here with numpy (no samples, no third-party music)
 
   KOKORO_DIR=/path/with/kokoro-q8.onnx+voices.npz+tts venv  python3 scripts/build-audio.py
 Requires: numpy, soundfile, kokoro-onnx (only for the voice-over step).
 """
-import json, os, sys
+import json, os, subprocess, sys
 import numpy as np
 import soundfile as sf
 
@@ -151,9 +151,17 @@ def music():
     print("music.wav", LENGTH, "s")
 
 
+def to_m4a(name):
+    wav = os.path.join(OUT, name + ".wav")
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-c:a", "aac", "-b:a", "192k", os.path.join(OUT, name + ".m4a")], check=True)
+    os.remove(wav)
+
+
 if __name__ == "__main__":
     what = sys.argv[1:] or ["voice", "music"]
     if "music" in what:
         music()
+        to_m4a("music")
     if "voice" in what:
         voiceover()
+        to_m4a("voiceover")

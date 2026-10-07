@@ -2,7 +2,7 @@
 /**
  * Renders video/P08-video.mp4 (1920x1080, 30 fps, 60 s) from real project captures.
  * Every frame is drawn by a timeline function (render(t)) and captured with Playwright,
- * then muxed with video/audio/voiceover.wav and video/audio/music.wav (see build-audio.py).
+ * then muxed with video/audio/voiceover.m4a and video/audio/music.m4a (see build-audio.py).
  *
  *   node scripts/build-video.js
  */
@@ -199,7 +199,7 @@ window.render(0);
   await new Promise((r) => ff.on('close', r));
   await browser.close();
   // mix: music ducked under the voice (sidechain), then loudness-normalise
-  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', silent, '-i', path.join(outDir, 'audio/voiceover.wav'), '-i', path.join(outDir, 'audio/music.wav'),
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', silent, '-i', path.join(outDir, 'audio/voiceover.m4a'), '-i', path.join(outDir, 'audio/music.m4a'),
     '-filter_complex',
     '[1:a]aformat=channel_layouts=stereo,asplit=2[vo][sc];[2:a]volume=0.55[m];[m][sc]sidechaincompress=threshold=0.03:ratio=8:attack=20:release=400[duck];[vo][duck]amix=inputs=2:duration=first:normalize=0,loudnorm=I=-16:TP=-1.5:LRA=11[a]',
     '-map', '0:v', '-map', '[a]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-t', String(LEN), '-movflags', '+faststart', path.join(outDir, 'P08-video.mp4')]);
