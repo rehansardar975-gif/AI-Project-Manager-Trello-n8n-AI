@@ -418,13 +418,37 @@ function escapeHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** Telegram HTML message (<= 4096 chars). */
-function buildTelegramMessage(reportText, result, source) {
+/**
+ * Decide which report is sent. Pure function, used verbatim by the n8n "Select Report" node.
+ * @param {object} aiResponse raw Gemini generateContent JSON, or {error} when the HTTP node failed
+ * @param {object} result output of evaluate()
+ * @param {{aiEnabled?: boolean|string}} options
+ * @returns {{source: 'ai'|'rules', reason: string, reportText: string, aiText: string|null}}
+ */
+function selectReport(aiResponse, result, options = {}) {
+  const ruleReport = buildRuleReport(result);
+  if (String(options.aiEnabled === undefined ? true : options.aiEnabled) !== 'true') {
+    return { source: 'rules', reason: 'AI disabled in Config', reportText: ruleReport, aiText: null };
+  }
+  const ai = aiResponse || {};
+  if (ai.error) {
+    const msg = typeof ai.error === 'string' ? ai.error : ai.error.message || JSON.stringify(ai.error);
+    return { source: 'rules', reason: 'AI request failed: ' + cleanText(msg).slice(0, 160), reportText: ruleReport, aiText: null };
+  }
+  const parts = (((ai.candidates || [])[0] || {}).content || {}).parts || [];
+  const aiText = parts.map((part) => part.text || '').join('').trim();
+  const check = validateAiReport(aiText, result);
+  if (!check.ok) return { source: 'rules', reason: 'AI report rejected: ' + check.reason, reportText: ruleReport, aiText: aiText || null };
+  return { source: 'ai', reason: 'AI report passed validation', reportText: aiText, aiText };
+}
+
+/** Telegram HTML message (<= 4096 chars). aiLabel names the model/endpoint that wrote an AI report. */
+function buildTelegramMessage(reportText, result, source, aiLabel = 'Gemini') {
   const s = result.summary;
   const header =
     `<b>P08 Project Health — ${escapeHtml(result.asOf)}</b>\n` +
     `🔴 Overdue ${s.overdue}  ⛔ Blocked ${s.blocked}  🟠 At risk ${s.atRisk}  🟢 On track ${s.onTrack}\n` +
-    `<i>Status decided by rules · report by ${source === 'ai' ? 'Gemini' : 'rule engine (AI fallback)'}</i>\n\n`;
+    `<i>Status decided by rules · report by ${source === 'ai' ? escapeHtml(aiLabel) + ' (validated)' : 'rule engine (AI fallback)'}</i>\n\n`;
   let body = escapeHtml(reportText);
   const max = 4096 - header.length - 20;
   if (body.length > max) body = body.slice(0, max) + '\n…';
@@ -440,6 +464,7 @@ const P08 = {
   buildRuleReport,
   buildAiPrompt,
   validateAiReport,
+  selectReport,
   buildTelegramMessage,
 };
 

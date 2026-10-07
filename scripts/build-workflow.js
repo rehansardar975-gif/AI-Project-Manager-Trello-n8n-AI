@@ -25,6 +25,9 @@ const withEngine = (body) =>
 
 const RISK_ENGINE_CODE = withEngine(`
 const cfg = $('Config').first().json;
+for (const key of ['trelloBoardId', 'telegramChatId']) {
+  if (!String(cfg[key] || '').trim()) throw new Error('Config.' + key + ' is empty. Set it in the Config node (see docs/HOW-TO.md).');
+}
 const rows = (node) => $(node).all().map((i) => i.json).filter((j) => j && j.id);
 const board = {
   lists: rows('Trello: Get Lists'),
@@ -40,28 +43,14 @@ const SELECT_REPORT_CODE = withEngine(`
 const cfg = $('Config').first().json;
 const engine = $('Risk Engine').first().json;
 const ai = $input.first().json || {};
-let source = 'rules';
-let reason;
-let reportText = engine.ruleReport;
-
-if (String(cfg.aiEnabled) !== 'true') {
-  reason = 'AI disabled in Config';
-} else if (ai.error) {
-  reason = 'Gemini request failed: ' + String(ai.error.message || JSON.stringify(ai.error)).slice(0, 200);
-} else {
-  const parts = (((ai.candidates || [])[0] || {}).content || {}).parts || [];
-  const text = parts.map((p) => p.text || '').join('').trim();
-  const check = P08.validateAiReport(text, engine.result);
-  if (check.ok) { source = 'ai'; reportText = text; }
-  reason = check.reason;
-}
-
+const pick = P08.selectReport(ai, engine.result, { aiEnabled: cfg.aiEnabled });
 return [{ json: {
-  source,
-  reason,
-  reportText,
+  source: pick.source,
+  reason: pick.reason,
+  reportText: pick.reportText,
+  aiText: pick.aiText,
   ruleReport: engine.ruleReport,
-  telegramText: P08.buildTelegramMessage(reportText, engine.result, source),
+  telegramText: P08.buildTelegramMessage(pick.reportText, engine.result, pick.source, cfg.aiLabel || 'Gemini'),
   summary: engine.result.summary,
   result: engine.result,
 } }];
@@ -121,11 +110,12 @@ const workflow = {
         assignments: {
           assignments: [
             assignment('trelloBaseUrl', 'https://api.trello.com'),
-            assignment('trelloBoardId', 'REPLACE_WITH_BOARD_ID'),
-            assignment('telegramChatId', 'REPLACE_WITH_CHAT_ID'),
+            assignment('trelloBoardId', ''),
+            assignment('telegramChatId', ''),
             assignment('geminiBaseUrl', 'https://generativelanguage.googleapis.com'),
             assignment('geminiModel', 'gemini-2.5-flash'),
             assignment('aiEnabled', 'true'),
+            assignment('aiLabel', 'Gemini'),
             assignment('timezone', 'Asia/Riyadh'),
             assignment('asOfOverride', ''),
           ],
@@ -224,6 +214,6 @@ const workflow = {
   pinData: {},
 };
 
-const out = path.join(root, 'n8n/p08-ai-project-manager.workflow.json');
+const out = path.join(root, 'workflow/p08-ai-project-manager.workflow.json');
 fs.writeFileSync(out, JSON.stringify(workflow, null, 2) + '\n');
 console.log(`wrote ${path.relative(root, out)} (${workflow.nodes.length} nodes)`);

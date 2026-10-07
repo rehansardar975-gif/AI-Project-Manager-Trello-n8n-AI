@@ -1,27 +1,37 @@
-# P08 — AI Project Manager (Trello + n8n + AI)
+# P08 — AI Project Manager (Trello + n8n + Gemini + Telegram)
 
-Reads every project card on a Trello board, decides each project's health with **deterministic rules**, has **Gemini** write a short founder report from those facts, and sends it on **Telegram** every weekday at 08:00. If Gemini fails or contradicts the rules, the rule-based report is sent instead.
+An n8n workflow that reads every project on a Trello board, decides its health with **deterministic rules**, asks **Gemini** for a short founder report, **validates** that report against the rules, and sends it on **Telegram** every weekday at 08:00. If Gemini fails or contradicts the rules, the rule-based report is sent instead.
+
+![Cover](cover/P08-cover.png)
 
 ```
-Trello (source of truth) → n8n (orchestration) → Risk Engine (rules decide health)
-        → Gemini (writes summary only) → Guardrail → Telegram (founder notification)
+Trello → n8n → Deterministic Rule Engine → Gemini → AI Validation → Telegram
+                                              └── failure / invalid ──→ Rule-based report → Telegram
 ```
 
-![Architecture](portfolio/architecture.png)
+## Package contents
 
-## What it does
+| Folder / file | What it is |
+|---|---|
+| `workflow/` | Importable n8n workflow (generated from `src/`, credentials referenced by name only) |
+| `src/p08-engine.js` | Rule engine, report builder, AI prompt, AI validation, Telegram formatter (no dependencies) |
+| `tests/` | 34 automated tests incl. the 12 acceptance scenarios (`npm test`) |
+| `scripts/` | Workflow builder, Trello setup, test environment (n8n harness, Trello/Gemini stand-ins), recorder, media builders |
+| `fixtures/` | 12-project test board (readable seed + Trello API format) |
+| `dashboard/` | Static dashboard of the run |
+| `trello-view/` | Board view rendered from the Trello API data |
+| `evidence/` | Raw n8n run results, live execution frames + recording, captures, test output |
+| `screenshots/` | 12 portfolio screenshots, 1600×1200 |
+| `video/` | 60 s, 1920×1080 video with voice-over and original music (+ audio sources) |
+| `case-study/` | A4 case study PDF |
+| `presentation/` | 16:9 presentation PDF, 13 slides |
+| `architecture/` | Architecture diagram |
+| `cover/` | Portfolio cover |
+| `docs/` | `HOW-TO.md` (setup and use), `ARCHITECTURE.md`, `TEST-ENVIRONMENT.md` |
+| `TEST-RESULTS.md` · `UPWORK-PORTFOLIO-ENTRY.md` · `MEDIA-LICENSES.md` | Results, portfolio text, media record |
+| `P08-AI-Project-Manager-FINAL.zip` | Everything above in one file |
 
-| Layer | Role | Where |
-|---|---|---|
-| Trello | Lists = status, card due date = deadline, 9 custom fields | `docs/TRELLO-SETUP.md` |
-| n8n | Schedule + manual trigger, Trello API reads, Code nodes, Gemini call, Telegram | `n8n/p08-ai-project-manager.workflow.json` |
-| Risk engine | OVERDUE › BLOCKED › AT RISK › ON TRACK + 9 signals | `src/p08-engine.js` |
-| Gemini | Turns computed facts into ≤170-word founder note; cannot change status | Gemini node + `buildAiPrompt()` |
-| Guardrail | Rejects AI text that omits a critical project or contradicts a status | `validateAiReport()` |
-| Telegram | HTML message: counts, act-now, at-risk, decisions | Telegram node |
-| Dashboard | Static HTML view of the same engine output | `dashboard/index.html` |
-
-## Rules (health is never decided by AI)
+## Health rules
 
 | Signal | Rule | Severity |
 |---|---|---|
@@ -32,36 +42,20 @@ Trello (source of truth) → n8n (orchestration) → Risk Engine (rules decide h
 | Dependency late / not found | Dependency due after this deadline, or name not on board | high |
 | Hours over estimate | Actual > Estimated (high above +20%) | medium/high |
 | Missing update | No card activity > 7 days (high > 14) | medium/high |
-| Missing fields | Owner, Deadline, Priority or Estimated Hours empty | medium |
+| Missing required data | Owner, Deadline, Priority or Estimated Hours empty | medium |
 | Owner reported high risk | Risk Level = High | medium |
 
-Precedence: OVERDUE › BLOCKED › AT RISK (any signal) › ON TRACK. Done cards are excluded. Thresholds are configurable (`DEFAULT_CONFIG`).
+Precedence: OVERDUE › BLOCKED › AT RISK › ON TRACK.
 
 ## Quick start
 
 ```bash
-npm test                         # 22 engine tests, no dependencies
-npm run build:workflow           # regenerate the n8n JSON from src/p08-engine.js
+npm test                    # 34 tests, no dependencies
+npm run build:workflow      # regenerate workflow/ from src/
 ```
 
-Deploy: follow `docs/N8N-SETUP.md` (import workflow, create 3 credentials, set Config node). Trello board: `docs/TRELLO-SETUP.md`.
-
-Local test run without a Trello account: `npm run mock:trello`, then set `Config.trelloBaseUrl = http://127.0.0.1:4010` and `trelloBoardId = b08000000000000000000001`.
-
-## Repository layout
-
-```
-src/p08-engine.js            deterministic engine (single source of truth)
-n8n/*.workflow.json          importable n8n workflow (generated, engine embedded)
-scripts/                     build-workflow, make-fixture, trello-setup, mock servers, build-dashboard
-fixtures/                    seed projects + Trello-API-shaped board
-test/engine.test.js          node:test suite
-dashboard/                   static dashboard
-evidence/                    real n8n run output, captures, test output
-portfolio/                   cover, architecture, screenshots, PDFs, video, build script
-docs/                        architecture, Trello setup, n8n setup, cloud environment notes
-```
+Setup on n8n with live Trello, Gemini and Telegram: **`docs/HOW-TO.md`**.
 
 ## Status
 
-See `TEST-RESULTS.md`. Verified: engine tests, full n8n execution, real Telegram delivery, all three AI report paths. **Not verified in the build environment:** a live Trello board and a live Gemini response (see `docs/CLOUD-ENVIRONMENT.md`).
+All 12 scenarios pass. The workflow was executed end to end in n8n 1.123 for all three report paths, with live Telegram delivery. Trello and Gemini were served by local stand-ins in those runs (see `docs/TEST-ENVIRONMENT.md`); connecting live accounts needs only the n8n credentials.

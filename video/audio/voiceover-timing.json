@@ -1,0 +1,44 @@
+[
+ {
+  "start": 0.4,
+  "end": 4.85,
+  "window_end": 4.9,
+  "speed": 1.071,
+  "text": "The AI project manager. Trello, n-eight-n, Gemini and Telegram."
+ },
+ {
+  "start": 5.4,
+  "end": 13.91,
+  "window_end": 14.6,
+  "speed": 1.0,
+  "text": "Trello is the source of truth. Each card holds the owner, deadline, hours, blockers and dependencies, and n-eight-n reads all of it."
+ },
+ {
+  "start": 15.4,
+  "end": 26.28,
+  "window_end": 29.4,
+  "speed": 1.0,
+  "text": "Here the workflow is running in n-eight-n. It loads the lists, custom fields and cards from Trello, then hands them to the rule engine. Each step turns green as it finishes."
+ },
+ {
+  "start": 30.4,
+  "end": 39.94,
+  "window_end": 41.6,
+  "speed": 1.0,
+  "text": "The rules decide each project's health: overdue, blocked, at risk, or on track. Every result comes with a reason, and the AI never sets a status."
+ },
+ {
+  "start": 42.3,
+  "end": 51.36,
+  "window_end": 51.7,
+  "speed": 1.0,
+  "text": "Gemini then writes a short report for the founder. It is checked against the rules, and if it fails that check, the rule-based report is sent instead."
+ },
+ {
+  "start": 52.3,
+  "end": 56.25,
+  "window_end": 59.4,
+  "speed": 1.0,
+  "text": "The founder gets one clear message on Telegram, every weekday morning."
+ }
+]

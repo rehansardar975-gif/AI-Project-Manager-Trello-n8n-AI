@@ -3,6 +3,7 @@ node_modules/
 .env.*
 !.env.example
 *.log
-portfolio/build/
+build/
+video/build/
 dist/
 .n8n/

@@ -1,0 +1,411 @@
+{
+  "scenario": "unavailable",
+  "geminiModel": "p08-test-unavailable",
+  "startedAt": "2026-10-07T22:54:33.237Z",
+  "error": null,
+  "nodes": {
+    "Run Now": {
+      "status": "success",
+      "ms": 0,
+      "items": 1
+    },
+    "Config": {
+      "status": "success",
+      "ms": 4,
+      "items": 1
+    },
+    "Trello: Get Lists": {
+      "status": "success",
+      "ms": 482,
+      "items": 6
+    },
+    "Trello: Get Custom Fields": {
+      "status": "success",
+      "ms": 397,
+      "items": 9
+    },
+    "Trello: Get Cards": {
+      "status": "success",
+      "ms": 381,
+      "items": 12
+    },
+    "Risk Engine": {
+      "status": "success",
+      "ms": 84,
+      "items": 1
+    },
+    "Gemini: Founder Report": {
+      "status": "success",
+      "ms": 1264,
+      "items": 1
+    },
+    "Select Report": {
+      "status": "success",
+      "ms": 27,
+      "items": 1
+    },
+    "Telegram: Notify Founder": {
+      "status": "success",
+      "ms": 608,
+      "items": 1
+    }
+  },
+  "selectReport": {
+    "source": "rules",
+    "reason": "AI request failed: 503 - \"{\\\"error\\\":{\\\"code\\\":503,\\\"message\\\":\\\"The model is overloaded. Please try again later.\\\",\\\"status\\\":\\\"UNAVAILABLE\\\"}}\"",
+    "reportText": "Portfolio health — 2026-10-07\n11 active: 1 overdue, 1 blocked, 6 at risk, 3 on track. 1 done.\n\nNeeds action now:\n- Client Portal v2 [OVERDUE] (Sara Malik): Deadline 2026-10-02 passed 5 day(s) ago\n- Payment Gateway Migration [BLOCKED] (Omar Haddad): Blocker: Waiting for bank sandbox credentials\n\nAt risk:\n- Security Audit Remediation (Khalid Rahman): Due in 5 day(s) but still in \"To Do\"\n- Mobile App Release 3.4 (Lina Farouk): Depends on \"Payment Gateway Migration\", which is BLOCKED\n- Support Chatbot Rollout (Yusuf Amin): Depends on \"Knowledge Base Cleanup\" (due 2026-11-10), which finishes after this deadline (2026-10-30)\n- Data Warehouse Sync (Bilal Qureshi): 55h logged vs 40h estimated (+38%)\n- Customer Onboarding Emails (Hana Yusuf): No update for 15 days\n- Internal Analytics Dashboard (no owner): Missing: Owner\n\nDecisions required from you:\n- Client Portal v2: Approve a 1-week scope cut or one extra developer\n- Security Audit Remediation: Approve the external pen-test vendor\n\nOn track: CRM Data Import, Knowledge Base Cleanup, Marketing Website Refresh",
+    "aiText": null,
+    "telegramText": "<b>P08 Project Health — 2026-10-07</b>\n🔴 Overdue 1  ⛔ Blocked 1  🟠 At risk 6  🟢 On track 3\n<i>Status decided by rules · report by rule engine (AI fallback)</i>\n\nPortfolio health — 2026-10-07\n11 active: 1 overdue, 1 blocked, 6 at risk, 3 on track. 1 done.\n\nNeeds action now:\n- Client Portal v2 [OVERDUE] (Sara Malik): Deadline 2026-10-02 passed 5 day(s) ago\n- Payment Gateway Migration [BLOCKED] (Omar Haddad): Blocker: Waiting for bank sandbox credentials\n\nAt risk:\n- Security Audit Remediation (Khalid Rahman): Due in 5 day(s) but still in \"To Do\"\n- Mobile App Release 3.4 (Lina Farouk): Depends on \"Payment Gateway Migration\", which is BLOCKED\n- Support Chatbot Rollout (Yusuf Amin): Depends on \"Knowledge Base Cleanup\" (due 2026-11-10), which finishes after this deadline (2026-10-30)\n- Data Warehouse Sync (Bilal Qureshi): 55h logged vs 40h estimated (+38%)\n- Customer Onboarding Emails (Hana Yusuf): No update for 15 days\n- Internal Analytics Dashboard (no owner): Missing: Owner\n\nDecisions required from you:\n- Client Portal v2: Approve a 1-week scope cut or one extra developer\n- Security Audit Remediation: Approve the external pen-test vendor\n\nOn track: CRM Data Import, Knowledge Base Cleanup, Marketing Website Refresh"
+  },
+  "telegram": {
+    "ok": true,
+    "message_id": 15,
+    "date": "2026-10-07T22:54:36.000Z"
+  },
+  "result": {
+    "asOf": "2026-10-07",
+    "config": {
+      "staleDays": 7,
+      "staleCriticalDays": 14,
+      "dueSoonDays": 7,
+      "hoursOverHighPct": 20,
+      "doneLists": [
+        "Done"
+      ],
+      "blockedLists": [
+        "Blocked"
+      ],
+      "notStartedLists": [
+        "Backlog",
+        "To Do"
+      ]
+    },
+    "summary": {
+      "totalCards": 12,
+      "active": 11,
+      "done": 1,
+      "overdue": 1,
+      "blocked": 1,
+      "atRisk": 6,
+      "onTrack": 3,
+      "missingUpdates": 1,
+      "hoursOverEstimate": 2,
+      "dependencyIssues": 2,
+      "decisionsRequired": 2,
+      "estimatedHours": 503,
+      "actualHours": 366
+    },
+    "projects": [
+      {
+        "id": "c08000000000000000000001",
+        "project": "Client Portal v2",
+        "url": "https://trello.com/c/p08c0001",
+        "status": "In Progress",
+        "owner": "Sara Malik",
+        "priority": "Critical",
+        "deadline": "2026-10-02",
+        "daysToDeadline": -5,
+        "estimatedHours": 120,
+        "actualHours": 138,
+        "blocker": null,
+        "dependency": null,
+        "riskLevel": "High",
+        "nextMilestone": "UAT sign-off",
+        "decisionRequired": "Approve a 1-week scope cut or one extra developer",
+        "daysSinceUpdate": 1,
+        "health": "OVERDUE",
+        "flags": [
+          {
+            "code": "OVERDUE",
+            "severity": "critical",
+            "message": "Deadline 2026-10-02 passed 5 day(s) ago"
+          },
+          {
+            "code": "HOURS_OVER_ESTIMATE",
+            "severity": "medium",
+            "message": "138h logged vs 120h estimated (+15%)"
+          },
+          {
+            "code": "OWNER_REPORTED_HIGH_RISK",
+            "severity": "medium",
+            "message": "Owner marked Risk Level = High"
+          }
+        ],
+        "score": 443
+      },
+      {
+        "id": "c08000000000000000000002",
+        "project": "Payment Gateway Migration",
+        "url": "https://trello.com/c/p08c0002",
+        "status": "Blocked",
+        "owner": "Omar Haddad",
+        "priority": "High",
+        "deadline": "2026-10-20",
+        "daysToDeadline": 13,
+        "estimatedHours": 60,
+        "actualHours": 41,
+        "blocker": "Waiting for bank sandbox credentials",
+        "dependency": null,
+        "riskLevel": "Medium",
+        "nextMilestone": "First sandbox transaction",
+        "decisionRequired": null,
+        "daysSinceUpdate": 4,
+        "health": "BLOCKED",
+        "flags": [
+          {
+            "code": "BLOCKED",
+            "severity": "critical",
+            "message": "Blocker: Waiting for bank sandbox credentials"
+          }
+        ],
+        "score": 331
+      },
+      {
+        "id": "c08000000000000000000006",
+        "project": "Security Audit Remediation",
+        "url": "https://trello.com/c/p08c0006",
+        "status": "To Do",
+        "owner": "Khalid Rahman",
+        "priority": "Critical",
+        "deadline": "2026-10-12",
+        "daysToDeadline": 5,
+        "estimatedHours": 24,
+        "actualHours": 0,
+        "blocker": null,
+        "dependency": null,
+        "riskLevel": "Medium",
+        "nextMilestone": "Fix high-severity findings",
+        "decisionRequired": "Approve the external pen-test vendor",
+        "daysSinceUpdate": 3,
+        "health": "AT RISK",
+        "flags": [
+          {
+            "code": "DUE_SOON_NOT_STARTED",
+            "severity": "high",
+            "message": "Due in 5 day(s) but still in \"To Do\""
+          }
+        ],
+        "score": 241
+      },
+      {
+        "id": "c08000000000000000000003",
+        "project": "Mobile App Release 3.4",
+        "url": "https://trello.com/c/p08c0003",
+        "status": "In Progress",
+        "owner": "Lina Farouk",
+        "priority": "High",
+        "deadline": "2026-10-18",
+        "daysToDeadline": 11,
+        "estimatedHours": 80,
+        "actualHours": 52,
+        "blocker": null,
+        "dependency": "Payment Gateway Migration",
+        "riskLevel": "Medium",
+        "nextMilestone": "App Store submission",
+        "decisionRequired": null,
+        "daysSinceUpdate": 1,
+        "health": "AT RISK",
+        "flags": [
+          {
+            "code": "DEPENDENCY_AT_RISK",
+            "severity": "high",
+            "message": "Depends on \"Payment Gateway Migration\", which is BLOCKED"
+          }
+        ],
+        "score": 231
+      },
+      {
+        "id": "c08000000000000000000009",
+        "project": "Support Chatbot Rollout",
+        "url": "https://trello.com/c/p08c0009",
+        "status": "In Progress",
+        "owner": "Yusuf Amin",
+        "priority": "High",
+        "deadline": "2026-10-30",
+        "daysToDeadline": 23,
+        "estimatedHours": 45,
+        "actualHours": 20,
+        "blocker": null,
+        "dependency": "Knowledge Base Cleanup",
+        "riskLevel": "Medium",
+        "nextMilestone": "Pilot with support team",
+        "decisionRequired": null,
+        "daysSinceUpdate": 1,
+        "health": "AT RISK",
+        "flags": [
+          {
+            "code": "DEPENDENCY_LATE",
+            "severity": "high",
+            "message": "Depends on \"Knowledge Base Cleanup\" (due 2026-11-10), which finishes after this deadline (2026-10-30)"
+          }
+        ],
+        "score": 231
+      },
+      {
+        "id": "c08000000000000000000004",
+        "project": "Data Warehouse Sync",
+        "url": "https://trello.com/c/p08c0004",
+        "status": "In Progress",
+        "owner": "Bilal Qureshi",
+        "priority": "Medium",
+        "deadline": "2026-10-25",
+        "daysToDeadline": 18,
+        "estimatedHours": 40,
+        "actualHours": 55,
+        "blocker": null,
+        "dependency": null,
+        "riskLevel": "Medium",
+        "nextMilestone": "Nightly sync in staging",
+        "decisionRequired": null,
+        "daysSinceUpdate": 2,
+        "health": "AT RISK",
+        "flags": [
+          {
+            "code": "HOURS_OVER_ESTIMATE",
+            "severity": "high",
+            "message": "55h logged vs 40h estimated (+38%)"
+          }
+        ],
+        "score": 221
+      },
+      {
+        "id": "c08000000000000000000005",
+        "project": "Customer Onboarding Emails",
+        "url": "https://trello.com/c/p08c0005",
+        "status": "Review",
+        "owner": "Hana Yusuf",
+        "priority": "Low",
+        "deadline": "2026-10-28",
+        "daysToDeadline": 21,
+        "estimatedHours": 16,
+        "actualHours": 9,
+        "blocker": null,
+        "dependency": null,
+        "riskLevel": "Low",
+        "nextMilestone": "Copy approval",
+        "decisionRequired": null,
+        "daysSinceUpdate": 15,
+        "health": "AT RISK",
+        "flags": [
+          {
+            "code": "MISSING_UPDATE",
+            "severity": "high",
+            "message": "No update for 15 days"
+          }
+        ],
+        "score": 211
+      },
+      {
+        "id": "c08000000000000000000008",
+        "project": "Internal Analytics Dashboard",
+        "url": "https://trello.com/c/p08c0008",
+        "status": "In Progress",
+        "owner": null,
+        "priority": "Low",
+        "deadline": "2026-11-14",
+        "daysToDeadline": 38,
+        "estimatedHours": 30,
+        "actualHours": 12,
+        "blocker": null,
+        "dependency": null,
+        "riskLevel": "Low",
+        "nextMilestone": "KPI definitions",
+        "decisionRequired": null,
+        "daysSinceUpdate": 2,
+        "health": "AT RISK",
+        "flags": [
+          {
+            "code": "MISSING_FIELDS",
+            "severity": "medium",
+            "message": "Missing: Owner"
+          }
+        ],
+        "score": 211
+      },
+      {
+        "id": "c08000000000000000000011",
+        "project": "CRM Data Import",
+        "url": "https://trello.com/c/p08c0011",
+        "status": "Review",
+        "owner": "Bilal Qureshi",
+        "priority": "Medium",
+        "deadline": "2026-10-21",
+        "daysToDeadline": 14,
+        "estimatedHours": 18,
+        "actualHours": 17,
+        "blocker": null,
+        "dependency": null,
+        "riskLevel": "Low",
+        "nextMilestone": "Data validation sign-off",
+        "decisionRequired": null,
+        "daysSinceUpdate": 1,
+        "health": "ON TRACK",
+        "flags": [],
+        "score": 120
+      },
+      {
+        "id": "c08000000000000000000010",
+        "project": "Knowledge Base Cleanup",
+        "url": "https://trello.com/c/p08c0010",
+        "status": "Backlog",
+        "owner": "Hana Yusuf",
+        "priority": "Medium",
+        "deadline": "2026-11-10",
+        "daysToDeadline": 34,
+        "estimatedHours": 20,
+        "actualHours": 0,
+        "blocker": null,
+        "dependency": null,
+        "riskLevel": "Low",
+        "nextMilestone": "Article audit",
+        "decisionRequired": null,
+        "daysSinceUpdate": 6,
+        "health": "ON TRACK",
+        "flags": [],
+        "score": 120
+      },
+      {
+        "id": "c08000000000000000000007",
+        "project": "Marketing Website Refresh",
+        "url": "https://trello.com/c/p08c0007",
+        "status": "In Progress",
+        "owner": "Nadia Siddiqui",
+        "priority": "Medium",
+        "deadline": "2026-11-06",
+        "daysToDeadline": 30,
+        "estimatedHours": 50,
+        "actualHours": 22,
+        "blocker": null,
+        "dependency": null,
+        "riskLevel": "Low",
+        "nextMilestone": "Homepage design review",
+        "decisionRequired": null,
+        "daysSinceUpdate": 1,
+        "health": "ON TRACK",
+        "flags": [],
+        "score": 120
+      },
+      {
+        "id": "c08000000000000000000012",
+        "project": "Q3 Invoicing Automation",
+        "url": "https://trello.com/c/p08c0012",
+        "status": "Done",
+        "owner": "Omar Haddad",
+        "priority": "Medium",
+        "deadline": "2026-09-30",
+        "daysToDeadline": -7,
+        "estimatedHours": 35,
+        "actualHours": 33,
+        "blocker": null,
+        "dependency": null,
+        "riskLevel": "Low",
+        "nextMilestone": null,
+        "decisionRequired": null,
+        "daysSinceUpdate": 8,
+        "health": "DONE",
+        "flags": [],
+        "score": 20
+      }
+    ]
+  }
+}

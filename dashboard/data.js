@@ -1,5 +1,5 @@
 window.P08_DATA = {
- "generatedFrom": "n8n execution 2026-10-07 22:05 UTC",
+ "generatedFrom": "n8n execution 2026-10-07 22:54 UTC",
  "result": {
   "asOf": "2026-10-07",
   "config": {
@@ -346,5 +346,6 @@ window.P08_DATA = {
    }
   ]
  },
- "report": "Portfolio health — 2026-10-07\n11 active: 1 overdue, 1 blocked, 6 at risk, 3 on track. 1 done.\n\nNeeds action now:\n- Client Portal v2 [OVERDUE] (Sara Malik): Deadline 2026-10-02 passed 5 day(s) ago\n- Payment Gateway Migration [BLOCKED] (Omar Haddad): Blocker: Waiting for bank sandbox credentials\n\nAt risk:\n- Security Audit Remediation (Khalid Rahman): Due in 5 day(s) but still in \"To Do\"\n- Mobile App Release 3.4 (Lina Farouk): Depends on \"Payment Gateway Migration\", which is BLOCKED\n- Support Chatbot Rollout (Yusuf Amin): Depends on \"Knowledge Base Cleanup\" (due 2026-11-10), which finishes after this deadline (2026-10-30)\n- Data Warehouse Sync (Bilal Qureshi): 55h logged vs 40h estimated (+38%)\n- Customer Onboarding Emails (Hana Yusuf): No update for 15 days\n- Internal Analytics Dashboard (no owner): Missing: Owner\n\nDecisions required from you:\n- Client Portal v2: Approve a 1-week scope cut or one extra developer\n- Security Audit Remediation: Approve the external pen-test vendor\n\nOn track: CRM Data Import, Knowledge Base Cleanup, Marketing Website Refresh"
+ "report": "2 projects need you today; 6 more are at risk.\n\nAct now\n- Client Portal v2 (Sara Malik) is overdue: Deadline 2026-10-02 passed 5 day(s) ago.\n- Payment Gateway Migration (Omar Haddad) is blocked: Blocker: Waiting for bank sandbox credentials.\n\nWatch\n- Security Audit Remediation: Due in 5 day(s) but still in \"To Do\".\n- Mobile App Release 3.4: Depends on \"Payment Gateway Migration\", which is BLOCKED.\n- Support Chatbot Rollout: Depends on \"Knowledge Base Cleanup\" (due 2026-11-10), which finishes after this deadline (2026-10-30).\n- Data Warehouse Sync: 55h logged vs 40h estimated (+38%).\n- Customer Onboarding Emails: No update for 15 days.\n- Internal Analytics Dashboard: Missing: Owner.\n\nDecisions for you\n- Client Portal v2: Approve a 1-week scope cut or one extra developer.\n- Security Audit Remediation: Approve the external pen-test vendor.\n\nOn track: CRM Data Import, Knowledge Base Cleanup, Marketing Website Refresh.",
+ "reportSource": "ai"
 };

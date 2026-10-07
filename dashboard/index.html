@@ -52,7 +52,7 @@
       </table></div>
     </div>
     <aside class="side">
-      <div class="card"><div class="card-h"><h2>Founder report</h2><span class="chip teal">RULE-BASED</span></div><div class="report" id="report"></div></div>
+      <div class="card"><div class="card-h"><h2>Founder report</h2><span class="chip teal" id="repchip"></span></div><div class="report" id="report"></div></div>
       <div class="card"><div class="card-h"><h2>Risk signals</h2><span class="label">active cards</span></div><div id="signals"></div>
         <div class="rule">Health precedence: OVERDUE › BLOCKED › AT RISK › ON TRACK. AI writes the summary only; it never sets status.</div></div>
     </aside>
@@ -65,7 +65,9 @@
   var cls = { 'OVERDUE': 'overdue', 'BLOCKED': 'blocked', 'AT RISK': 'atrisk', 'ON TRACK': 'ontrack', 'DONE': 'done' };
   var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   document.getElementById('sub').textContent = 'As of ' + r.asOf + ' · ' + D.generatedFrom;
-  document.getElementById('reportsrc').textContent = 'REPORT: RULES (AI FALLBACK READY)';
+  var ai = D.reportSource === 'ai';
+  document.getElementById('reportsrc').textContent = ai ? 'REPORT: AI · VALIDATED AGAINST RULES' : 'REPORT: RULE ENGINE (AI FALLBACK)';
+  document.getElementById('repchip').textContent = ai ? 'AI · VALIDATED' : 'RULE-BASED';
   var k = [['Active cards', s.active, '', s.done + ' done'], ['Overdue', s.overdue, 'r', 'deadline passed'], ['Blocked', s.blocked, 'p', 'blocker recorded'],
            ['At risk', s.atRisk, 'a', 'one or more signals'], ['On track', s.onTrack, 'g', 'no signals'], ['Decisions', s.decisionsRequired, '', 'waiting on founder']];
   document.getElementById('kpis').innerHTML = k.map(function (x) {

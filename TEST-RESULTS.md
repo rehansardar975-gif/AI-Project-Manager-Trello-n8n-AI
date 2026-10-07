@@ -1,94 +1,93 @@
 # Test results — P08 AI Project Manager
 
-Run date: 2026-10-07 · Environment: Claude Code Cloud container, Node 22.22.0, n8n 1.123.83 (self-hosted, local)
+Run date: 2026-10-07 · n8n 1.123.83 (self-hosted) · Node.js 22.22.0
+Raw evidence: `evidence/` (test output, n8n run JSON, live execution frames and recording).
 
 ## Summary
 
 | Area | Result |
 |---|---|
-| Engine unit tests | **22 / 22 pass** (`npm test`, raw output: `evidence/test-output.tap`) |
-| Full n8n run, Trello API responses → Telegram | **Pass** — execution #3, 1.917 s, all 9 executed nodes green |
-| Telegram delivery | **Pass** — Bot API returned `ok: true`, message_id 4 |
-| Gemini fails → rule report sent | **Pass** (real Gemini call through the build proxy returned 400) |
-| Gemini faithful → AI report used | **Pass** (local Gemini-format response) |
-| Gemini contradicts rules → rejected | **Pass** (local Gemini-format response) |
-| Dashboard renders, desktop 1520 px + mobile 390 px | **Pass** — no console errors |
-| Live Trello board | **Not verified** — build environment cannot authenticate to Trello (see `docs/CLOUD-ENVIRONMENT.md`) |
-| Live Gemini response | **Not verified** — same reason; key confirmed working outside this environment |
+| Automated tests (`npm test`) | **34 / 34 pass** — 22 engine tests + 12 acceptance scenarios (`evidence/test-output.tap`) |
+| n8n end-to-end, AI report accepted | **Pass** — all 9 executed nodes succeeded, Telegram `ok: true` (message 13) |
+| n8n end-to-end, AI contradicts rules | **Pass** — AI text rejected, rule report sent, Telegram `ok: true` (message 14) |
+| n8n end-to-end, AI unavailable (HTTP 503) | **Pass** — rule report sent, Telegram `ok: true` (message 15) |
+| Live editor run, recorded | **Pass** — 4.3 s from click to "Workflow executed successfully" (`evidence/n8n-live/`) |
+| Dashboard (1600 px and 390 px phone) | **Pass** — renders, no console errors |
+| Secret scan (source, docs, evidence, images, PDFs, video, ZIP, git history) | **Pass** — see section 6 |
 
-## 1. Engine unit tests (`test/engine.test.js`)
+## 1. Test environment (what was live and what was a stand-in)
 
-| Covered | Tests |
-|---|---|
-| Happy path | healthy card is ON TRACK with no flags |
-| OVERDUE | past deadline; deadline today is not overdue; OVERDUE takes precedence over BLOCKED |
-| BLOCKED | blocker text or Blocked list |
-| Hours | ≤20% over → medium; >20% → high; equal → no flag |
-| Missing updates | exactly 7 days ok; 8 days medium; >14 days high; missing date flagged |
-| Missing data | Owner/Deadline/Priority/Estimated Hours listed |
-| Dependencies | on BLOCKED card; finishing after this deadline (case-insensitive); unknown name; self-reference; completed dependency ignored |
-| Due soon | ≤7 days while in To Do |
-| Done / archived | Done never flagged, excluded from counts; archived cards ignored |
-| Invalid input | non-array, bad asOf, bad board object throw clear errors; garbage numbers/dates become "missing" (bug found and fixed during testing: `evaluate()` now re-sanitizes numeric fields) |
-| Config | thresholds overridable |
-| Determinism | identical output on repeated runs |
-| Trello parsing | list id → name, dropdown option lookup, numbers stored as strings |
-| Full fixture | expected health for all 12 cards; severity ordering |
-| AI guardrail | accepts faithful text; rejects empty, oversized, omitted critical project, contradiction |
-| AI prompt | carries facts, forbids re-judging, excludes Done work |
-| Telegram | HTML escaped, ≤ 4096 chars, fallback label |
-
-## 2. n8n end-to-end (real n8n instance)
-
-Setup: workflow imported unchanged except Config values (`trelloBaseUrl` → local Trello API stand-in, board ID, chat ID). Credentials stored in n8n's encrypted store. Raw result: `evidence/n8n-run-2026-10-07.json`.
-
-| Node | Status | Items out |
+| Layer | In these runs | Notes |
 |---|---|---|
-| Run Now | success | 1 |
-| Config | success | 1 |
-| Trello: Get Lists | success | 6 |
-| Trello: Get Custom Fields | success | 9 |
-| Trello: Get Cards | success | 12 |
-| Risk Engine | success | 1 |
-| Gemini: Founder Report | success (error captured, flow continued) | 1 |
-| Select Report | success — `source: rules` | 1 |
-| Telegram: Notify Founder | success — `ok: true` | 1 |
+| n8n | **Real** n8n 1.123.83 | Production workflow file; only Config values changed |
+| Trello | Local Trello API stand-in | `scripts/mock-trello-server.js` serves `fixtures/trello-board.json` in Trello REST format, requires key + token, adds 350 ms latency |
+| Gemini | Gemini-API-compatible test endpoint | `scripts/mock-gemini-server.js`, real `generateContent` request and response shape, 1.2 s latency |
+| Telegram | **Real** Telegram Bot API | Messages delivered to the project bot |
 
-Execution history (visible in `evidence/n8n-execution.png`):
+Why: this build environment's network proxy could not authenticate to Trello (key + token) or Gemini. The architecture does not depend on it — in production n8n holds all three credentials. Details: `docs/TEST-ENVIRONMENT.md`.
 
-| # | Result | Cause |
+## 2. Acceptance scenarios (tests/scenarios.test.js)
+
+| # | Scenario | Expected | Unit test | n8n run |
+|---|---|---|---|---|
+| S1 | All projects on track | 3 ON TRACK, no "act now" section | Pass | — |
+| S2 | Overdue project | OVERDUE, "passed 5 day(s) ago" | Pass | Pass (Client Portal v2) |
+| S3 | Blocked project | BLOCKED, blocker text as reason | Pass | Pass (Payment Gateway Migration) |
+| S4 | Dependency problem | blocked / late / unknown dependency each flagged | Pass | Pass (Mobile App 3.4, Support Chatbot) |
+| S5 | Hours exceeded | +38% → high severity | Pass | Pass (Data Warehouse Sync) |
+| S6 | Multiple risks on one card | 6 flags, OVERDUE wins by precedence, most severe first | Pass | — |
+| S7 | Missing update | 15 days → high severity | Pass | Pass (Customer Onboarding Emails) |
+| S8 | Missing required data | "Missing: Owner, Priority, Estimated Hours" | Pass | Pass (Internal Analytics Dashboard) |
+| S9 | Gemini unavailable | rule report; also for timeout, empty and disabled AI | Pass | Pass (HTTP 503) |
+| S10 | Gemini gives a correct report | AI report accepted | Pass | Pass |
+| S11 | Gemini contradicts rules | rejected (on-track contradiction, omitted project, empty) | Pass | Pass |
+| S12 | Telegram notification | header, counts, footer label, ≤ 4096 chars | Pass | Pass (3 deliveries) |
+
+The 22 engine tests also cover: deadline today is not overdue, exact threshold edges (7 days, +20%), self-dependency, completed dependency, Done and archived cards, invalid input (bad dates, negative or text numbers, non-array, bad asOf), config overrides, determinism, Trello parsing (list IDs, dropdown options, numbers stored as strings), prompt content, HTML escaping.
+
+## 3. n8n executions (evidence/n8n-run-*.json)
+
+Board result in all runs: 11 active → **1 OVERDUE, 1 BLOCKED, 6 AT RISK, 3 ON TRACK**, 1 Done, 2 decisions required.
+
+| Node | Items out | AI accepted (ms) | AI contradicts (ms) | AI unavailable (ms) |
+|---|---|---|---|---|
+| Run Now | 1 | 0 | 1 | 0 |
+| Config | 1 | 4 | 4 | 4 |
+| Trello: Get Lists | 6 | 473 | 476 | 482 |
+| Trello: Get Custom Fields | 9 | 382 | 396 | 397 |
+| Trello: Get Cards | 12 | 383 | 379 | 381 |
+| Risk Engine | 1 | 89 | 114 | 84 |
+| Gemini: Founder Report | 1 | 1251 | 1243 | 1264 (error captured, flow continued) |
+| Select Report | 1 | 21 — `source: ai` | 24 — `source: rules` | 27 — `source: rules` |
+| Telegram: Notify Founder | 1 | 817 — ok, #13 | 505 — ok, #14 | 608 — ok, #15 |
+
+Select Report reasons:
+- Accepted: `AI report passed validation`
+- Contradicts: `AI report rejected: AI response calls "Security Audit Remediation" on track, rules say AT RISK`
+- Unavailable: `AI request failed: 503 … The model is overloaded`
+
+## 4. Live editor recording (evidence/n8n-live/)
+
+Playwright opened the workflow in the n8n editor, clicked **Execute workflow**, and captured 52 frames until "Workflow executed successfully" (click at 0.75 s, done at 5.04 s). It then opened the outputs of Trello: Get Cards, Risk Engine, Gemini, Select Report and Telegram. `execution-recording.mp4` plays the frames at real speed. Chat and bot IDs are masked on screen before every still; the script stops if any remain visible.
+
+## 5. Media checks
+
+| Asset | Check | Result |
 |---|---|---|
-| 1 | Error at Telegram (404) | Test credential setup: token not applied by n8n's `CREDENTIALS_OVERWRITE_DATA` in CLI mode |
-| 2 | Error at Telegram (404) | Same; overwrite approach abandoned |
-| 3 | **Success** | Token stored in n8n encrypted credential store |
-| 4 | Success, `source: ai` | AI-accepted path |
-| 5 | Success, `source: rules`, reason `AI response calls "Data Warehouse Sync" on track, rules say AT RISK` | Guardrail path |
+| `video/P08-video.mp4` | 1920×1080, 30 fps, H.264 + AAC, duration | 60.0 s, −16 LUFS integrated |
+| Voice-over | 6 lines, all inside their scene windows, speed 1.00–1.07 | Pass |
+| Screenshots | 12 files, 1600×1200 | Pass |
+| Case study | A4, 8 pages | Pass |
+| Presentation | 16:9, 13 slides | Pass |
 
-Runs 1–2 failed because of the local test harness, not the workflow. Trello and engine stages were green in all runs.
+## 6. Security checks
 
-## 3. Result on the test board (as of 2026-10-07)
+- Text search for the Telegram token, bot ID and chat ID across the repository, evidence JSON, PDFs (`pdftotext`) and the final ZIP: **0 matches**.
+- Screenshots: identifiers masked in the DOM before capture; the recorder fails if any identifier is still visible.
+- Git history: searched every commit for the same values: **0 matches**.
+- The workflow JSON references credentials by name only.
+- Local test credentials were stored only in the throwaway n8n instance's encrypted store; the short-lived import file was overwritten and deleted.
 
-11 active cards: **1 OVERDUE, 1 BLOCKED, 6 AT RISK, 3 ON TRACK**, 1 Done, 2 decisions required.
+## 7. Not verified here
 
-| Project | Health | Main reason |
-|---|---|---|
-| Client Portal v2 | OVERDUE | Deadline passed 5 days ago; +15% hours |
-| Payment Gateway Migration | BLOCKED | Waiting for bank sandbox credentials |
-| Security Audit Remediation | AT RISK | Due in 5 days, still in To Do |
-| Mobile App Release 3.4 | AT RISK | Depends on a BLOCKED card |
-| Support Chatbot Rollout | AT RISK | Dependency finishes after its deadline |
-| Data Warehouse Sync | AT RISK | +38% hours over estimate |
-| Customer Onboarding Emails | AT RISK | No update for 15 days |
-| Internal Analytics Dashboard | AT RISK | Missing owner |
-| CRM Data Import, Knowledge Base Cleanup, Marketing Website Refresh | ON TRACK | — |
-
-## 4. Security checks
-
-- Repository scanned for the Telegram token and chat ID before commit: 0 matches.
-- Workflow JSON contains credential names only.
-- Local test files containing the token were removed; n8n stores it encrypted (plaintext search of the n8n data folder: 0 matches).
-
-## 5. What the client must still verify
-
-1. Run `scripts/trello-setup.js` (or build the board manually) and execute the workflow against the live board.
-2. Confirm one live Gemini response is accepted (`Select Report.source = ai`).
+- A live Trello board, and a live Gemini response from Google. Both use the same nodes and only need the n8n credentials in `docs/HOW-TO.md`.

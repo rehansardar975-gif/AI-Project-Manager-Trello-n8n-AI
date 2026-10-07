@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P08 Board View</title>
+<link rel="stylesheet" href="../assets/p08.css">
+<!-- Renders fixtures/trello-board.json (Trello REST API format: lists, customFields, cards) as a board.
+     Open with #card=<cardId> to show the card detail view. -->
+<style>
+  body{background:linear-gradient(135deg,#0B4F8A 0%,#0E6E8C 55%,#14857F 100%);min-height:100vh;font-size:14px}
+  .bar{height:48px;background:rgba(0,0,0,.28);display:flex;align-items:center;gap:14px;padding:0 16px;color:#fff}
+  .bar .app{font:800 15px var(--head);display:flex;align-items:center;gap:8px}
+  .bar .app i{width:22px;height:22px;border-radius:5px;background:rgba(255,255,255,.9);display:grid;place-items:center}
+  .bar .app i::before{content:"";width:12px;height:10px;border-left:4px solid #0B4F8A;border-right:4px solid #0B4F8A}
+  .bar .src{margin-left:auto;font:500 11.5px var(--mono);color:#CDE7F5;letter-spacing:.04em}
+  .bhead{display:flex;align-items:center;gap:12px;padding:12px 16px;color:#fff;background:rgba(0,0,0,.14)}
+  .bhead h1{font:700 19px var(--head);margin:0}
+  .pill{background:rgba(255,255,255,.18);border-radius:6px;padding:5px 10px;font-weight:600;font-size:13px}
+  .lists{display:flex;gap:12px;padding:14px 16px;align-items:flex-start;overflow-x:auto}
+  .list{background:#F1F2F4;border-radius:12px;width:272px;flex:none;padding:8px 8px 4px;box-shadow:0 1px 1px rgba(9,30,66,.25)}
+  .lh{display:flex;justify-content:space-between;padding:6px 8px 10px;font-weight:700;color:#172B4D}
+  .lh span{font:500 12px var(--mono);color:#626F86}
+  .card{background:#fff;border-radius:8px;box-shadow:0 1px 1px rgba(9,30,66,.25);padding:8px 10px 10px;margin-bottom:8px;color:#172B4D}
+  .labels{display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap}
+  .lab{height:16px;border-radius:4px;padding:0 8px;font:700 10.5px/16px var(--body);color:#fff}
+  .lab.Critical{background:#C9372C}.lab.High{background:#E2741D}.lab.Medium{background:#CF9F02}.lab.Low{background:#22A06B}
+  .ct{font-weight:600;line-height:1.3;margin-bottom:6px}
+  .badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:#44546F}
+  .b{display:inline-flex;align-items:center;gap:4px;border-radius:4px;padding:1px 6px;background:#F1F2F4}
+  .b.late{background:#C9372C;color:#fff}.b.soon{background:#F5CD47;color:#172B4D}.b.done{background:#22A06B;color:#fff}
+  .cf{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;margin-top:7px;font-size:12px;color:#44546F}
+  .cf b{font-weight:600;color:#626F86}
+  .cf .warn{color:#AE2E24;font-weight:600}
+  .av{margin-left:auto;width:24px;height:24px;border-radius:50%;background:#0C66E4;color:#fff;font:700 10px/24px var(--body);text-align:center}
+  .av.none{background:#DCDFE4;color:#626F86}
+  /* card detail */
+  .modal{position:fixed;inset:0;background:rgba(9,30,66,.55);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+  .modal.on{display:flex}
+  .dlg{background:#F1F2F4;border-radius:12px;width:820px;max-width:100%;padding:24px 28px;color:#172B4D}
+  .dlg h2{font:700 22px var(--head);margin:0}
+  .dlg .in{color:#44546F;margin:4px 0 18px}
+  .sec{margin-top:18px}.sec h3{font:700 14px var(--body);margin:0 0 8px;color:#44546F}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .f{background:#fff;border-radius:8px;padding:9px 12px;box-shadow:0 1px 1px rgba(9,30,66,.15)}
+  .f .k{font:600 11.5px var(--body);color:#626F86}.f .v{font-weight:600;margin-top:3px}
+  .f.wide{grid-column:span 3}.f.alert{border-left:4px solid #C9372C}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}.f.wide{grid-column:auto}}
+</style>
+</head>
+<body>
+<div class="bar"><div class="app"><i></i>Trello board</div><div class="src" id="src"></div></div>
+<div class="bhead"><h1 id="bname">P08 Delivery Portfolio</h1><span class="pill">Board</span><span class="pill">Custom Fields: 9</span><span class="pill" id="count"></span></div>
+<div class="lists" id="lists"></div>
+<div class="modal" id="modal"><div class="dlg" id="dlg"></div></div>
+<script src="board-data.js"></script>
+<script>
+(function () {
+  var B = window.P08_BOARD, asOf = Date.parse(B.asOf + 'T00:00:00Z'), DAY = 864e5;
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var fdef = {}; B.customFields.forEach(function (f) { fdef[f.id] = f; });
+  var listName = {}; B.lists.forEach(function (l) { listName[l.id] = l.name; });
+  function fields(card) {
+    var o = {};
+    (card.customFieldItems || []).forEach(function (it) {
+      var d = fdef[it.idCustomField]; if (!d) return;
+      if (d.type === 'list') { var op = d.options.filter(function (x) { return x.id === it.idValue; })[0]; o[d.name] = op ? op.value.text : ''; }
+      else if (d.type === 'number') o[d.name] = Number(it.value.number);
+      else o[d.name] = it.value.text;
+    });
+    return o;
+  }
+  function due(card) {
+    if (!card.due) return null;
+    var d = Date.parse(card.due.slice(0, 10) + 'T00:00:00Z'), days = Math.round((d - asOf) / DAY);
+    var txt = new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    return { txt: txt, cls: card.dueComplete ? 'done' : days < 0 ? 'late' : days <= 7 ? 'soon' : '', days: days };
+  }
+  var initials = function (n) { return n ? n.split(' ').map(function (p) { return p[0]; }).join('').slice(0, 2) : '?'; };
+  document.getElementById('src').textContent = 'Rendered from Trello REST API data · board ' + B.boardId.slice(0, 8) + '… · as of ' + B.asOf;
+  document.getElementById('count').textContent = B.cards.length + ' cards';
+  document.getElementById('lists').innerHTML = B.lists.map(function (l) {
+    var cards = B.cards.filter(function (c) { return c.idList === l.id; });
+    return '<div class="list"><div class="lh">' + esc(l.name) + '<span>' + cards.length + '</span></div>' + cards.map(function (c) {
+      var f = fields(c), d = due(c), over = f['Actual Hours'] > f['Estimated Hours'];
+      return '<div class="card"><div class="labels">' + (f.Priority ? '<span class="lab ' + f.Priority + '">' + f.Priority + '</span>' : '') + '</div>' +
+        '<div class="ct">' + esc(c.name) + '</div><div class="badges">' +
+        (d ? '<span class="b ' + d.cls + '">◷ ' + d.txt + '</span>' : '<span class="b">no due date</span>') +
+        (f['Estimated Hours'] != null ? '<span class="b"' + (over ? ' style="color:#AE2E24;font-weight:600"' : '') + '>⏱ ' + (f['Actual Hours'] || 0) + '/' + f['Estimated Hours'] + 'h</span>' : '') +
+        '<span class="av' + (f.Owner ? '' : ' none') + '" title="' + esc(f.Owner || 'No owner') + '">' + esc(initials(f.Owner)) + '</span></div>' +
+        '<div class="cf">' +
+        (f.Blocker ? '<b>Blocker</b><span class="warn">' + esc(f.Blocker) + '</span>' : '') +
+        (f.Dependency ? '<b>Depends on</b><span>' + esc(f.Dependency) + '</span>' : '') +
+        (f['Risk Level'] ? '<b>Risk</b><span' + (f['Risk Level'] === 'High' ? ' class="warn"' : '') + '>' + esc(f['Risk Level']) + '</span>' : '') +
+        (f['Next Milestone'] ? '<b>Next</b><span>' + esc(f['Next Milestone']) + '</span>' : '') +
+        (f['Decision Required'] ? '<b>Decision</b><span class="warn">' + esc(f['Decision Required']) + '</span>' : '') +
+        '</div></div>';
+    }).join('') + '</div>';
+  }).join('');
+  var m = location.hash.match(/card=([\w]+)/);
+  if (m) {
+    var c = B.cards.filter(function (x) { return x.id === m[1]; })[0], f = fields(c), d = due(c);
+    var box = function (k, v, cls) { return '<div class="f ' + (cls || '') + '"><div class="k">' + k + '</div><div class="v">' + (v === '' || v == null ? '<span style="color:#8590A2">—</span>' : esc(v)) + '</div></div>'; };
+    var activity = Math.round((asOf - Date.parse(c.dateLastActivity.slice(0, 10) + 'T00:00:00Z')) / DAY);
+    document.getElementById('dlg').innerHTML = '<h2>' + esc(c.name) + '</h2><div class="in">in list <b>' + esc(listName[c.idList]) + '</b> · last activity ' + activity + ' day(s) ago</div>' +
+      '<div class="row">' + (f.Priority ? '<span class="lab ' + f.Priority + '" style="height:22px;line-height:22px;font-size:12px">' + f.Priority + '</span>' : '') +
+      (d ? '<span class="b ' + d.cls + '" style="font-size:13px;padding:3px 8px">Due ' + d.txt + (d.days < 0 && !c.dueComplete ? ' · overdue' : '') + '</span>' : '') + '</div>' +
+      '<div class="sec"><h3>Custom Fields</h3><div class="grid">' +
+      box('Owner', f.Owner) + box('Priority', f.Priority) + box('Risk Level', f['Risk Level']) +
+      box('Estimated Hours', f['Estimated Hours']) + box('Actual Hours', f['Actual Hours'], f['Actual Hours'] > f['Estimated Hours'] ? 'alert' : '') + box('Next Milestone', f['Next Milestone']) +
+      box('Blocker', f.Blocker, f.Blocker ? 'wide alert' : 'wide') + box('Dependency', f.Dependency, 'wide') + box('Decision Required', f['Decision Required'], f['Decision Required'] ? 'wide alert' : 'wide') +
+      '</div></div>';
+    document.getElementById('modal').classList.add('on');
+  }
+})();
+</script>
+</body>
+</html>

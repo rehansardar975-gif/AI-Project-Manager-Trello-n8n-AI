@@ -2,141 +2,213 @@ TAP version 13
 # Subtest: healthy card is ON TRACK with no flags
 ok 1 - healthy card is ON TRACK with no flags
   ---
-  duration_ms: 5.019358
+  duration_ms: 4.452904
   type: 'test'
   ...
 # Subtest: past deadline => OVERDUE
 ok 2 - past deadline => OVERDUE
   ---
-  duration_ms: 0.365767
+  duration_ms: 0.477373
   type: 'test'
   ...
 # Subtest: deadline today is not overdue
 ok 3 - deadline today is not overdue
   ---
-  duration_ms: 0.244596
+  duration_ms: 0.273984
   type: 'test'
   ...
 # Subtest: blocker text or Blocked list => BLOCKED
 ok 4 - blocker text or Blocked list => BLOCKED
   ---
-  duration_ms: 0.319878
+  duration_ms: 0.29485
   type: 'test'
   ...
 # Subtest: OVERDUE takes precedence over BLOCKED
 ok 5 - OVERDUE takes precedence over BLOCKED
   ---
-  duration_ms: 0.398418
+  duration_ms: 0.460939
   type: 'test'
   ...
 # Subtest: hours over estimate: medium at <=20%, high above
 ok 6 - hours over estimate: medium at <=20%, high above
   ---
-  duration_ms: 0.496721
+  duration_ms: 0.43788
   type: 'test'
   ...
 # Subtest: missing update: >7 days medium, >14 days high, missing date flagged
 ok 7 - missing update: >7 days medium, >14 days high, missing date flagged
   ---
-  duration_ms: 0.416938
+  duration_ms: 0.490965
   type: 'test'
   ...
 # Subtest: missing required fields are listed
 ok 8 - missing required fields are listed
   ---
-  duration_ms: 0.336935
+  duration_ms: 0.289001
   type: 'test'
   ...
 # Subtest: due soon while not started => AT RISK
 ok 9 - due soon while not started => AT RISK
   ---
-  duration_ms: 0.354112
+  duration_ms: 0.415326
   type: 'test'
   ...
 # Subtest: dependency on a BLOCKED card => DEPENDENCY_AT_RISK
 ok 10 - dependency on a BLOCKED card => DEPENDENCY_AT_RISK
   ---
-  duration_ms: 0.600258
+  duration_ms: 0.511131
   type: 'test'
   ...
 # Subtest: dependency finishing after this deadline => DEPENDENCY_LATE
 ok 11 - dependency finishing after this deadline => DEPENDENCY_LATE
   ---
-  duration_ms: 0.306105
+  duration_ms: 0.315515
   type: 'test'
   ...
 # Subtest: unknown, self and completed dependencies
 ok 12 - unknown, self and completed dependencies
   ---
-  duration_ms: 0.265023
+  duration_ms: 1.305076
   type: 'test'
   ...
 # Subtest: Done cards are never flagged and excluded from active counts
 ok 13 - Done cards are never flagged and excluded from active counts
   ---
-  duration_ms: 0.135917
+  duration_ms: 0.152902
   type: 'test'
   ...
 # Subtest: invalid inputs are rejected or tolerated safely
 ok 14 - invalid inputs are rejected or tolerated safely
   ---
-  duration_ms: 0.5787
+  duration_ms: 0.677613
   type: 'test'
   ...
 # Subtest: config overrides thresholds
 ok 15 - config overrides thresholds
   ---
-  duration_ms: 0.114965
+  duration_ms: 0.118925
   type: 'test'
   ...
 # Subtest: evaluation is deterministic
 ok 16 - evaluation is deterministic
   ---
-  duration_ms: 13.128953
+  duration_ms: 10.023093
   type: 'test'
   ...
 # Subtest: Trello fixture: normalization reads every custom field type
 ok 17 - Trello fixture: normalization reads every custom field type
   ---
-  duration_ms: 0.37961
+  duration_ms: 0.428104
   type: 'test'
   ...
 # Subtest: Trello fixture: expected health for every card
 ok 18 - Trello fixture: expected health for every card
   ---
-  duration_ms: 0.499223
+  duration_ms: 0.457388
   type: 'test'
   ...
 # Subtest: closed (archived) cards are ignored
 ok 19 - closed (archived) cards are ignored
   ---
-  duration_ms: 0.380091
+  duration_ms: 0.402026
   type: 'test'
   ...
 # Subtest: AI guardrail: accepts faithful text, rejects omissions and contradictions
 ok 20 - AI guardrail: accepts faithful text, rejects omissions and contradictions
   ---
-  duration_ms: 1.280851
+  duration_ms: 1.359636
   type: 'test'
   ...
 # Subtest: AI prompt carries facts and forbids re-judging status
 ok 21 - AI prompt carries facts and forbids re-judging status
   ---
-  duration_ms: 1.479356
+  duration_ms: 0.582027
   type: 'test'
   ...
 # Subtest: Telegram message escapes HTML and stays within 4096 chars
 ok 22 - Telegram message escapes HTML and stays within 4096 chars
   ---
-  duration_ms: 0.417895
+  duration_ms: 0.540618
   type: 'test'
   ...
-1..22
-# tests 22
+# Subtest: S1 all projects on track
+ok 23 - S1 all projects on track
+  ---
+  duration_ms: 15.943043
+  type: 'test'
+  ...
+# Subtest: S2 overdue project
+ok 24 - S2 overdue project
+  ---
+  duration_ms: 0.970118
+  type: 'test'
+  ...
+# Subtest: S3 blocked project
+ok 25 - S3 blocked project
+  ---
+  duration_ms: 0.38614
+  type: 'test'
+  ...
+# Subtest: S4 dependency problem (blocked dependency, late dependency, unknown dependency)
+ok 26 - S4 dependency problem (blocked dependency, late dependency, unknown dependency)
+  ---
+  duration_ms: 1.022171
+  type: 'test'
+  ...
+# Subtest: S5 hours exceeded
+ok 27 - S5 hours exceeded
+  ---
+  duration_ms: 0.471529
+  type: 'test'
+  ...
+# Subtest: S6 multiple simultaneous risks on one card
+ok 28 - S6 multiple simultaneous risks on one card
+  ---
+  duration_ms: 0.507727
+  type: 'test'
+  ...
+# Subtest: S7 missing update
+ok 29 - S7 missing update
+  ---
+  duration_ms: 0.417266
+  type: 'test'
+  ...
+# Subtest: S8 missing required data
+ok 30 - S8 missing required data
+  ---
+  duration_ms: 0.296946
+  type: 'test'
+  ...
+# Subtest: S9 Gemini unavailable -> rule-based report
+ok 31 - S9 Gemini unavailable -> rule-based report
+  ---
+  duration_ms: 3.912755
+  type: 'test'
+  ...
+# Subtest: S10 Gemini gives a correct report -> accepted
+ok 32 - S10 Gemini gives a correct report -> accepted
+  ---
+  duration_ms: 1.847212
+  type: 'test'
+  ...
+# Subtest: S11 Gemini contradicts deterministic rules -> rejected, rules used
+ok 33 - S11 Gemini contradicts deterministic rules -> rejected, rules used
+  ---
+  duration_ms: 1.398809
+  type: 'test'
+  ...
+# Subtest: S12 Telegram notification content
+ok 34 - S12 Telegram notification content
+  ---
+  duration_ms: 1.014845
+  type: 'test'
+  ...
+1..34
+# tests 34
 # suites 0
-# pass 22
+# pass 34
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 131.995347
+# duration_ms 137.360392

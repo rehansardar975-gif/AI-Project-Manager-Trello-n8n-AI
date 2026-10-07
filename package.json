@@ -4,15 +4,19 @@
   "private": true,
   "description": "Trello -> n8n -> deterministic risk rules -> Gemini founder report -> Telegram",
   "license": "UNLICENSED",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
-    "test": "node --test test/*.test.js",
+    "test": "node --test tests/*.test.js",
     "fixture": "node scripts/make-fixture.js",
     "build:workflow": "node scripts/build-workflow.js",
-    "build:dashboard": "node scripts/build-dashboard.js evidence/n8n-run-2026-10-07.json",
-    "build:portfolio": "node portfolio/build.js",
+    "build:dashboard": "node scripts/build-dashboard.js evidence/n8n-run-faithful.json",
+    "build:portfolio": "node scripts/build-portfolio.js",
     "mock:trello": "node scripts/mock-trello-server.js",
     "mock:gemini": "node scripts/mock-gemini-server.js",
-    "trello:setup": "node scripts/trello-setup.js"
+    "trello:setup": "node scripts/trello-setup.js",
+    "build:audio": "python3 scripts/build-audio.py",
+    "build:video": "node scripts/build-video.js"
   }
 }

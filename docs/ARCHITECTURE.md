@@ -1,19 +1,19 @@
 # Architecture
 
-![Architecture](../portfolio/architecture.png)
+![Architecture](../architecture/P08-architecture.png)
 
 ## Flow (n8n, 10 nodes)
 
 1. **Run Now** (manual) / **Weekdays 08:00** (cron `0 8 * * 1-5`, workflow timezone Asia/Riyadh)
-2. **Config** — `trelloBaseUrl`, `trelloBoardId`, `telegramChatId`, `geminiBaseUrl`, `geminiModel`, `aiEnabled`, `timezone`, `asOfOverride`
+2. **Config** — `trelloBaseUrl`, `trelloBoardId`, `telegramChatId`, `geminiBaseUrl`, `geminiModel`, `aiEnabled`, `aiLabel`, `timezone`, `asOfOverride`
 3. **Trello: Get Lists** → `GET /1/boards/{id}/lists`
 4. **Trello: Get Custom Fields** → `GET /1/boards/{id}/customFields` (execute once)
 5. **Trello: Get Cards** → `GET /1/boards/{id}/cards/open?customFieldItems=true` (execute once)
    - All three use the n8n **Trello API** credential (key + token as query params), 3 retries, 30 s timeout, `alwaysOutputData` so an empty board still produces a report.
-6. **Risk Engine** (Code) — `fromTrello()` → `evaluate()` → `buildRuleReport()` + `buildAiPrompt()`
+6. **Risk Engine** (Code) — checks Config, then `fromTrello()` → `evaluate()` → `buildRuleReport()` + `buildAiPrompt()`
 7. **Gemini: Founder Report** (HTTP) — `POST /v1beta/models/{model}:generateContent`, Header Auth credential (`x-goog-api-key`), temperature 0.2, 30 s timeout, **On Error: continue**
-8. **Select Report** (Code) — uses Gemini text only if `validateAiReport()` passes; otherwise the rule report. Records `source` and `reason`.
-9. **Telegram: Notify Founder** — HTML parse mode, no n8n attribution, 3 retries.
+8. **Select Report** (Code) — `selectReport()`: uses the Gemini text only if `validateAiReport()` passes; otherwise the rule report. Records `source` and `reason`.
+9. **Telegram: Notify Founder** — `buildTelegramMessage()` output, HTML parse mode, no n8n attribution, 3 retries.
 
 ## Design decisions
 
@@ -25,7 +25,7 @@
 
 **Credentials only in n8n.** The workflow JSON references credentials by name (`P08 Trello API`, `P08 Gemini API Key`, `P08 Telegram Bot`). No key, token or chat ID is committed.
 
-**Why n8n holds the Trello credential (not the build environment).** Trello authentication needs two values together (API key + token). The Claude Cloud build environment injects one network secret per host and the Trello request was rejected by Trello's edge with HTTP 401. Rather than depend on that proxy, the system is designed so the only component that ever calls Trello is n8n, which has a native two-field Trello credential. See `CLOUD-ENVIRONMENT.md`.
+**Only n8n talks to Trello and Gemini.** Trello needs two values per request (API key + token); n8n's Trello credential stores both. No other component needs any credential. See `TEST-ENVIRONMENT.md` for how this was tested.
 
 ## Data contract (normalized project)
 
