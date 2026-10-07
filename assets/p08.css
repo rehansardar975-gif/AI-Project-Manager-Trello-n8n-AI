@@ -1,0 +1,30 @@
+/* P08 visual system — shared by dashboard and portfolio assets */
+@font-face{font-family:"Plus Jakarta Sans";font-weight:600;src:url(fonts/plus-jakarta-sans-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Plus Jakarta Sans";font-weight:700;src:url(fonts/plus-jakarta-sans-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Plus Jakarta Sans";font-weight:800;src:url(fonts/plus-jakarta-sans-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:Inter;font-weight:400;src:url(fonts/inter-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:Inter;font-weight:500;src:url(fonts/inter-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:Inter;font-weight:600;src:url(fonts/inter-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:Inter;font-weight:700;src:url(fonts/inter-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:400;src:url(fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:500;src:url(fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:700;src:url(fonts/jetbrains-mono-latin-700-normal.woff2) format("woff2")}
+:root{
+  --navy:#0A1428;--navy-2:#101E3A;--navy-3:#1A2B4F;--teal:#2DD4BF;--teal-d:#0D9488;--teal-glow:rgba(45,212,191,.35);
+  --bg:#EEF2F6;--card:#FFFFFF;--line:#DCE3EC;--ink:#0F172A;--ink-2:#334155;--muted:#64748B;
+  --red:#DC2626;--red-bg:#FEE2E2;--purple:#7C3AED;--purple-bg:#EDE9FE;--amber:#B45309;--amber-bg:#FEF3C7;
+  --green:#047857;--green-bg:#D1FAE5;--slate:#475569;--slate-bg:#E2E8F0;
+  --head:"Plus Jakarta Sans",Inter,sans-serif;--body:Inter,system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--body);color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--head);margin:0;letter-spacing:-.02em}
+.mono{font-family:var(--mono)}
+.label{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.06em;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.chip.overdue{color:var(--red);background:var(--red-bg)}.chip.blocked{color:var(--purple);background:var(--purple-bg)}
+.chip.atrisk{color:var(--amber);background:var(--amber-bg)}.chip.ontrack{color:var(--green);background:var(--green-bg)}
+.chip.done{color:var(--slate);background:var(--slate-bg)}.chip.teal{color:var(--teal-d);background:#CCFBF1}
+.chip.dark{color:var(--teal);background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.35)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px}

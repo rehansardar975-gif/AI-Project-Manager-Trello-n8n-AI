@@ -1,0 +1,406 @@
+{
+  "name": "P08 — AI Project Manager (Trello → Rules → Gemini → Telegram)",
+  "nodes": [
+    {
+      "id": "n-manual",
+      "name": "Run Now",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "n-schedule",
+      "name": "Weekdays 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1-5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "n-config",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        100
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-trelloBaseUrl",
+              "name": "trelloBaseUrl",
+              "value": "https://api.trello.com",
+              "type": "string"
+            },
+            {
+              "id": "cfg-trelloBoardId",
+              "name": "trelloBoardId",
+              "value": "REPLACE_WITH_BOARD_ID",
+              "type": "string"
+            },
+            {
+              "id": "cfg-telegramChatId",
+              "name": "telegramChatId",
+              "value": "REPLACE_WITH_CHAT_ID",
+              "type": "string"
+            },
+            {
+              "id": "cfg-geminiBaseUrl",
+              "name": "geminiBaseUrl",
+              "value": "https://generativelanguage.googleapis.com",
+              "type": "string"
+            },
+            {
+              "id": "cfg-geminiModel",
+              "name": "geminiModel",
+              "value": "gemini-2.5-flash",
+              "type": "string"
+            },
+            {
+              "id": "cfg-aiEnabled",
+              "name": "aiEnabled",
+              "value": "true",
+              "type": "string"
+            },
+            {
+              "id": "cfg-timezone",
+              "name": "timezone",
+              "value": "Asia/Riyadh",
+              "type": "string"
+            },
+            {
+              "id": "cfg-asOfOverride",
+              "name": "asOfOverride",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n-lists",
+      "name": "Trello: Get Lists",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        100
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "url": "={{ $('Config').first().json.trelloBaseUrl }}/1/boards/{{ $('Config').first().json.trelloBoardId }}/lists",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "trelloApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,name,closed"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "trelloApi": {
+          "id": "p08TrelloApi",
+          "name": "P08 Trello API"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "n-fields",
+      "name": "Trello: Get Custom Fields",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        100
+      ],
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "parameters": {
+        "url": "={{ $('Config').first().json.trelloBaseUrl }}/1/boards/{{ $('Config').first().json.trelloBoardId }}/customFields",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "trelloApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": []
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "trelloApi": {
+          "id": "p08TrelloApi",
+          "name": "P08 Trello API"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "n-cards",
+      "name": "Trello: Get Cards",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        100
+      ],
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "parameters": {
+        "url": "={{ $('Config').first().json.trelloBaseUrl }}/1/boards/{{ $('Config').first().json.trelloBoardId }}/cards/open",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "trelloApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customFieldItems",
+              "value": "true"
+            },
+            {
+              "name": "fields",
+              "value": "id,name,idList,due,dueComplete,dateLastActivity,shortUrl,closed"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "trelloApi": {
+          "id": "p08TrelloApi",
+          "name": "P08 Trello API"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "n-engine",
+      "name": "Risk Engine",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        100
+      ],
+      "parameters": {
+        "jsCode": "// ---- src/p08-engine.js (embedded by scripts/build-workflow.js — edit the source file, then rebuild) ----\nconst P08 = (function () { const module = { exports: {} };\n/**\n * P08 — AI Project Manager: deterministic health/risk engine.\n *\n * Pure JavaScript, no dependencies. The same file is:\n *   - required by the Node test suite and local scripts, and\n *   - embedded verbatim into the n8n \"Risk Engine\" Code node by scripts/build-workflow.js.\n *\n * Health is decided ONLY by the rules in this file. The AI layer receives the\n * already-calculated facts and may only rephrase them.\n */\n'use strict';\n\nconst HEALTH = Object.freeze({\n  OVERDUE: 'OVERDUE',\n  BLOCKED: 'BLOCKED',\n  AT_RISK: 'AT RISK',\n  ON_TRACK: 'ON TRACK',\n  DONE: 'DONE',\n});\n\nconst HEALTH_RANK = { OVERDUE: 4, BLOCKED: 3, 'AT RISK': 2, 'ON TRACK': 1, DONE: 0 };\nconst PRIORITY_RANK = { Critical: 4, High: 3, Medium: 2, Low: 1 };\nconst SEVERITY_RANK = { critical: 3, high: 2, medium: 1, info: 0 };\n\nconst DEFAULT_CONFIG = Object.freeze({\n  staleDays: 7, // no card activity for more than N days -> missing update\n  staleCriticalDays: 14, // escalates the missing-update flag to high severity\n  dueSoonDays: 7, // deadline within N days while still in an early list\n  hoursOverHighPct: 20, // actual hours above estimate by more than N% -> high severity\n  doneLists: ['Done'],\n  blockedLists: ['Blocked'],\n  notStartedLists: ['Backlog', 'To Do'],\n});\n\n// Custom field names expected on the Trello board (see docs/TRELLO-SETUP.md).\nconst FIELD = Object.freeze({\n  OWNER: 'Owner',\n  PRIORITY: 'Priority',\n  ESTIMATED_HOURS: 'Estimated Hours',\n  ACTUAL_HOURS: 'Actual Hours',\n  BLOCKER: 'Blocker',\n  DEPENDENCY: 'Dependency',\n  RISK_LEVEL: 'Risk Level',\n  NEXT_MILESTONE: 'Next Milestone',\n  DECISION_REQUIRED: 'Decision Required',\n});\n\nconst DAY_MS = 24 * 60 * 60 * 1000;\n\nfunction toDateOnly(value) {\n  if (value === null || value === undefined || value === '') return null;\n  const d = new Date(value);\n  if (Number.isNaN(d.getTime())) return null;\n  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());\n}\n\nfunction cleanText(value) {\n  if (value === null || value === undefined) return '';\n  return String(value).replace(/\\s+/g, ' ').trim();\n}\n\nfunction toNumber(value) {\n  if (value === null || value === undefined || value === '') return null;\n  const n = Number(value);\n  return Number.isFinite(n) && n >= 0 ? n : null;\n}\n\n/**\n * Convert raw Trello API responses into normalized project records.\n * @param {{cards: object[], lists: object[], customFields: object[]}} board\n */\nfunction fromTrello(board) {\n  if (!board || !Array.isArray(board.cards)) {\n    throw new Error('fromTrello: expected { cards: [], lists: [], customFields: [] }');\n  }\n  const lists = Array.isArray(board.lists) ? board.lists : [];\n  const customFields = Array.isArray(board.customFields) ? board.customFields : [];\n\n  const listName = new Map(lists.map((l) => [l.id, cleanText(l.name)]));\n  const fieldDefs = new Map(customFields.map((f) => [f.id, f]));\n\n  return board.cards\n    .filter((card) => card && !card.closed)\n    .map((card) => {\n      const values = {};\n      for (const item of card.customFieldItems || []) {\n        const def = fieldDefs.get(item.idCustomField);\n        if (!def) continue;\n        values[cleanText(def.name)] = readCustomFieldValue(def, item);\n      }\n      return {\n        id: card.id,\n        project: cleanText(card.name),\n        url: card.shortUrl || card.url || '',\n        status: listName.get(card.idList) || 'Unknown list',\n        owner: cleanText(values[FIELD.OWNER]),\n        priority: cleanText(values[FIELD.PRIORITY]),\n        deadline: card.due || null,\n        deadlineComplete: Boolean(card.dueComplete),\n        estimatedHours: toNumber(values[FIELD.ESTIMATED_HOURS]),\n        actualHours: toNumber(values[FIELD.ACTUAL_HOURS]),\n        blocker: cleanText(values[FIELD.BLOCKER]),\n        dependency: cleanText(values[FIELD.DEPENDENCY]),\n        riskLevel: cleanText(values[FIELD.RISK_LEVEL]),\n        nextMilestone: cleanText(values[FIELD.NEXT_MILESTONE]),\n        decisionRequired: cleanText(values[FIELD.DECISION_REQUIRED]),\n        lastActivity: card.dateLastActivity || null,\n      };\n    });\n}\n\nfunction readCustomFieldValue(def, item) {\n  if (def.type === 'list') {\n    const option = (def.options || []).find((o) => o.id === item.idValue);\n    return option && option.value ? option.value.text : '';\n  }\n  const v = item.value || {};\n  if (def.type === 'number') return v.number;\n  if (def.type === 'checkbox') return v.checked === 'true' ? 'Yes' : '';\n  if (def.type === 'date') return v.date;\n  return v.text;\n}\n\nfunction flag(code, severity, message) {\n  return { code, severity, message };\n}\n\nfunction fmtDate(ms) {\n  return ms === null ? 'none' : new Date(ms).toISOString().slice(0, 10);\n}\n\n/**\n * Evaluate project health. Deterministic: same input + asOf => same output.\n * @param {object[]} projects normalized records (see fromTrello)\n * @param {{asOf?: string|Date, config?: object}} options\n */\nfunction evaluate(projects, options = {}) {\n  if (!Array.isArray(projects)) throw new Error('evaluate: projects must be an array');\n  const cfg = Object.assign({}, DEFAULT_CONFIG, options.config || {});\n  const asOfMs = toDateOnly(options.asOf || new Date());\n  if (asOfMs === null) throw new Error('evaluate: invalid asOf date');\n\n  const isDone = (p) => cfg.doneLists.includes(p.status) || p.deadlineComplete === true;\n\n  // Pass 1: rules that depend only on the card itself.\n  const evaluated = projects.map((raw) => {\n    // Re-sanitize: records may come from sources other than fromTrello().\n    const p = Object.assign({}, raw, {\n      project: cleanText(raw.project),\n      status: cleanText(raw.status),\n      owner: cleanText(raw.owner),\n      priority: cleanText(raw.priority),\n      blocker: cleanText(raw.blocker),\n      dependency: cleanText(raw.dependency),\n      riskLevel: cleanText(raw.riskLevel),\n      nextMilestone: cleanText(raw.nextMilestone),\n      decisionRequired: cleanText(raw.decisionRequired),\n      estimatedHours: toNumber(raw.estimatedHours),\n      actualHours: toNumber(raw.actualHours),\n    });\n    const flags = [];\n    const due = toDateOnly(p.deadline);\n    const done = isDone(p);\n    const daysToDeadline = due === null ? null : Math.round((due - asOfMs) / DAY_MS);\n    const last = toDateOnly(p.lastActivity);\n    const daysSinceUpdate = last === null ? null : Math.round((asOfMs - last) / DAY_MS);\n\n    if (!done) {\n      if (due !== null && due < asOfMs) {\n        flags.push(flag('OVERDUE', 'critical', `Deadline ${fmtDate(due)} passed ${-daysToDeadline} day(s) ago`));\n      }\n      if (cfg.blockedLists.includes(p.status) || p.blocker) {\n        flags.push(flag('BLOCKED', 'critical', p.blocker ? `Blocker: ${p.blocker}` : `Card sits in \"${p.status}\" list`));\n      }\n      if (\n        due !== null &&\n        daysToDeadline >= 0 &&\n        daysToDeadline <= cfg.dueSoonDays &&\n        cfg.notStartedLists.includes(p.status)\n      ) {\n        flags.push(flag('DUE_SOON_NOT_STARTED', 'high', `Due in ${daysToDeadline} day(s) but still in \"${p.status}\"`));\n      }\n      if (p.estimatedHours !== null && p.actualHours !== null && p.estimatedHours > 0 && p.actualHours > p.estimatedHours) {\n        const overPct = Math.round(((p.actualHours - p.estimatedHours) / p.estimatedHours) * 100);\n        flags.push(\n          flag(\n            'HOURS_OVER_ESTIMATE',\n            overPct > cfg.hoursOverHighPct ? 'high' : 'medium',\n            `${p.actualHours}h logged vs ${p.estimatedHours}h estimated (+${overPct}%)`\n          )\n        );\n      }\n      if (daysSinceUpdate === null) {\n        flags.push(flag('MISSING_UPDATE', 'medium', 'No activity date recorded'));\n      } else if (daysSinceUpdate > cfg.staleDays) {\n        flags.push(\n          flag(\n            'MISSING_UPDATE',\n            daysSinceUpdate > cfg.staleCriticalDays ? 'high' : 'medium',\n            `No update for ${daysSinceUpdate} days`\n          )\n        );\n      }\n      const missing = [];\n      if (!p.owner) missing.push('Owner');\n      if (due === null) missing.push('Deadline');\n      if (!p.priority) missing.push('Priority');\n      if (p.estimatedHours === null) missing.push('Estimated Hours');\n      if (missing.length) {\n        flags.push(flag('MISSING_FIELDS', 'medium', `Missing: ${missing.join(', ')}`));\n      }\n      if (p.riskLevel === 'High') {\n        flags.push(flag('OWNER_REPORTED_HIGH_RISK', 'medium', 'Owner marked Risk Level = High'));\n      }\n    }\n\n    return Object.assign({}, p, { done, due, daysToDeadline, daysSinceUpdate, flags });\n  });\n\n  // Pass 2: dependency rules (need every card's pass-1 state).\n  const byName = new Map(evaluated.map((p) => [p.project.toLowerCase(), p]));\n  for (const p of evaluated) {\n    if (p.done || !p.dependency) continue;\n    const dep = byName.get(p.dependency.toLowerCase());\n    if (!dep) {\n      p.flags.push(flag('DEPENDENCY_NOT_FOUND', 'high', `Dependency \"${p.dependency}\" does not match any card on the board`));\n      continue;\n    }\n    if (dep === p) {\n      p.flags.push(flag('DEPENDENCY_NOT_FOUND', 'high', 'Card lists itself as its dependency'));\n      continue;\n    }\n    if (dep.done) continue;\n    const depCritical = dep.flags.filter((f) => f.code === 'OVERDUE' || f.code === 'BLOCKED').map((f) => f.code);\n    if (depCritical.length) {\n      p.flags.push(flag('DEPENDENCY_AT_RISK', 'high', `Depends on \"${dep.project}\", which is ${depCritical.join(' + ')}`));\n    } else if (p.due !== null && (dep.due === null || dep.due > p.due)) {\n      p.flags.push(\n        flag(\n          'DEPENDENCY_LATE',\n          'high',\n          `Depends on \"${dep.project}\" (due ${fmtDate(dep.due)}), which finishes after this deadline (${fmtDate(p.due)})`\n        )\n      );\n    }\n  }\n\n  // Health decision: fixed precedence, no AI involvement.\n  const results = evaluated.map((p) => {\n    let health;\n    const codes = new Set(p.flags.map((f) => f.code));\n    if (p.done) health = HEALTH.DONE;\n    else if (codes.has('OVERDUE')) health = HEALTH.OVERDUE;\n    else if (codes.has('BLOCKED')) health = HEALTH.BLOCKED;\n    else if (p.flags.length) health = HEALTH.AT_RISK;\n    else health = HEALTH.ON_TRACK;\n\n    p.flags.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);\n    const score =\n      HEALTH_RANK[health] * 100 +\n      (PRIORITY_RANK[p.priority] || 0) * 10 +\n      Math.min(p.flags.length, 9);\n\n    return {\n      id: p.id,\n      project: p.project,\n      url: p.url,\n      status: p.status,\n      owner: p.owner || null,\n      priority: p.priority || null,\n      deadline: p.due === null ? null : fmtDate(p.due),\n      daysToDeadline: p.daysToDeadline,\n      estimatedHours: p.estimatedHours,\n      actualHours: p.actualHours,\n      blocker: p.blocker || null,\n      dependency: p.dependency || null,\n      riskLevel: p.riskLevel || null,\n      nextMilestone: p.nextMilestone || null,\n      decisionRequired: p.decisionRequired || null,\n      daysSinceUpdate: p.daysSinceUpdate,\n      health,\n      flags: p.flags,\n      score,\n    };\n  });\n\n  results.sort((a, b) => b.score - a.score || a.project.localeCompare(b.project));\n\n  const active = results.filter((r) => r.health !== HEALTH.DONE);\n  const count = (h) => active.filter((r) => r.health === h).length;\n  const flagCount = (code) => active.filter((r) => r.flags.some((f) => f.code === code)).length;\n  const est = active.reduce((s, r) => s + (r.estimatedHours || 0), 0);\n  const act = active.reduce((s, r) => s + (r.actualHours || 0), 0);\n\n  return {\n    asOf: fmtDate(asOfMs),\n    config: cfg,\n    summary: {\n      totalCards: results.length,\n      active: active.length,\n      done: results.length - active.length,\n      overdue: count(HEALTH.OVERDUE),\n      blocked: count(HEALTH.BLOCKED),\n      atRisk: count(HEALTH.AT_RISK),\n      onTrack: count(HEALTH.ON_TRACK),\n      missingUpdates: flagCount('MISSING_UPDATE'),\n      hoursOverEstimate: flagCount('HOURS_OVER_ESTIMATE'),\n      dependencyIssues: active.filter((r) => r.flags.some((f) => f.code.startsWith('DEPENDENCY_'))).length,\n      decisionsRequired: active.filter((r) => r.decisionRequired).length,\n      estimatedHours: est,\n      actualHours: act,\n    },\n    projects: results,\n  };\n}\n\n/** Plain-text, rule-based founder report. Always available; used when AI is unavailable or rejected. */\nfunction buildRuleReport(result) {\n  const s = result.summary;\n  const active = result.projects.filter((p) => p.health !== HEALTH.DONE);\n  const lines = [];\n  lines.push(`Portfolio health — ${result.asOf}`);\n  lines.push(\n    `${s.active} active: ${s.overdue} overdue, ${s.blocked} blocked, ${s.atRisk} at risk, ${s.onTrack} on track. ${s.done} done.`\n  );\n  const critical = active.filter((p) => p.health === HEALTH.OVERDUE || p.health === HEALTH.BLOCKED);\n  if (critical.length) {\n    lines.push('');\n    lines.push('Needs action now:');\n    for (const p of critical) {\n      lines.push(`- ${p.project} [${p.health}] (${p.owner || 'no owner'}): ${p.flags[0].message}`);\n    }\n  }\n  const risk = active.filter((p) => p.health === HEALTH.AT_RISK);\n  if (risk.length) {\n    lines.push('');\n    lines.push('At risk:');\n    for (const p of risk) {\n      lines.push(`- ${p.project} (${p.owner || 'no owner'}): ${p.flags.map((f) => f.message).slice(0, 2).join('; ')}`);\n    }\n  }\n  const decisions = active.filter((p) => p.decisionRequired);\n  if (decisions.length) {\n    lines.push('');\n    lines.push('Decisions required from you:');\n    for (const p of decisions) lines.push(`- ${p.project}: ${p.decisionRequired}`);\n  }\n  const ok = active.filter((p) => p.health === HEALTH.ON_TRACK);\n  if (ok.length) {\n    lines.push('');\n    lines.push(`On track: ${ok.map((p) => p.project).join(', ')}`);\n  }\n  return lines.join('\\n');\n}\n\n/** Prompt for the AI layer. Facts are passed as JSON; the model may not change them. */\nfunction buildAiPrompt(result) {\n  const facts = {\n    asOf: result.asOf,\n    summary: result.summary,\n    projects: result.projects\n      .filter((p) => p.health !== HEALTH.DONE)\n      .map((p) => ({\n        project: p.project,\n        health: p.health,\n        owner: p.owner,\n        priority: p.priority,\n        deadline: p.deadline,\n        nextMilestone: p.nextMilestone,\n        decisionRequired: p.decisionRequired,\n        issues: p.flags.map((f) => f.message),\n      })),\n  };\n  return [\n    'You write a weekly portfolio status note for a company founder.',\n    'The health status of every project has ALREADY been decided by deterministic rules. Treat it as fixed fact.',\n    'Rules:',\n    '- Never change, upgrade, downgrade or re-judge any health status.',\n    '- Use only the facts in the JSON. Do not invent numbers, dates, people, causes or outcomes.',\n    '- Mention every project whose health is OVERDUE or BLOCKED by its exact name.',\n    '- Plain text only, no markdown symbols such as ** or #. Maximum 170 words.',\n    'Structure: one-line headline; \"Act now\" (overdue/blocked, with the specific issue); \"Watch\" (at risk);',\n    '\"Decisions for you\" (only if decisionRequired is set); one closing line on what is on track.',\n    '',\n    'FACTS:',\n    JSON.stringify(facts),\n  ].join('\\n');\n}\n\n/**\n * Guardrail on the AI output. Rejects empty/oversized text, missing critical\n * projects, or any health label that contradicts the rule engine.\n */\nfunction validateAiReport(text, result) {\n  const t = cleanText(text);\n  if (!t) return { ok: false, reason: 'empty AI response' };\n  if (t.length > 2500) return { ok: false, reason: 'AI response too long' };\n  const active = result.projects.filter((p) => p.health !== HEALTH.DONE);\n  for (const p of active) {\n    if ((p.health === HEALTH.OVERDUE || p.health === HEALTH.BLOCKED) && !t.toLowerCase().includes(p.project.toLowerCase())) {\n      return { ok: false, reason: `AI response omitted critical project \"${p.project}\"` };\n    }\n  }\n  // A project described with a better health than the rules gave it is a contradiction.\n  for (const p of active) {\n    if (p.health === HEALTH.ON_TRACK) continue;\n    const re = new RegExp(escapeRegExp(p.project) + '[^.\\\\n]{0,40}\\\\bon track\\\\b', 'i');\n    if (re.test(t)) return { ok: false, reason: `AI response calls \"${p.project}\" on track, rules say ${p.health}` };\n  }\n  return { ok: true, reason: 'passed guardrails' };\n}\n\nfunction escapeRegExp(s) {\n  return s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n}\n\nfunction escapeHtml(s) {\n  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\n/** Telegram HTML message (<= 4096 chars). */\nfunction buildTelegramMessage(reportText, result, source) {\n  const s = result.summary;\n  const header =\n    `<b>P08 Project Health — ${escapeHtml(result.asOf)}</b>\\n` +\n    `🔴 Overdue ${s.overdue}  ⛔ Blocked ${s.blocked}  🟠 At risk ${s.atRisk}  🟢 On track ${s.onTrack}\\n` +\n    `<i>Status decided by rules · report by ${source === 'ai' ? 'Gemini' : 'rule engine (AI fallback)'}</i>\\n\\n`;\n  let body = escapeHtml(reportText);\n  const max = 4096 - header.length - 20;\n  if (body.length > max) body = body.slice(0, max) + '\\n…';\n  return header + body;\n}\n\nconst P08 = {\n  HEALTH,\n  FIELD,\n  DEFAULT_CONFIG,\n  fromTrello,\n  evaluate,\n  buildRuleReport,\n  buildAiPrompt,\n  validateAiReport,\n  buildTelegramMessage,\n};\n\nif (typeof module !== 'undefined' && module.exports) module.exports = P08;\n\nreturn module.exports; })();\n// ---- node logic ----\nconst cfg = $('Config').first().json;\nconst rows = (node) => $(node).all().map((i) => i.json).filter((j) => j && j.id);\nconst board = {\n  lists: rows('Trello: Get Lists'),\n  customFields: rows('Trello: Get Custom Fields'),\n  cards: rows('Trello: Get Cards'),\n};\nconst asOf = cfg.asOfOverride || $now.setZone(cfg.timezone || 'UTC').toISODate();\nconst result = P08.evaluate(P08.fromTrello(board), { asOf });\nreturn [{ json: { result, ruleReport: P08.buildRuleReport(result), aiPrompt: P08.buildAiPrompt(result) } }];"
+      },
+      "notes": "Deterministic health rules. AI never decides status."
+    },
+    {
+      "id": "n-gemini",
+      "name": "Gemini: Founder Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        100
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.geminiBaseUrl }}/v1beta/models/{{ $('Config').first().json.geminiModel }}:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ contents: [{ role: \"user\", parts: [{ text: $json.aiPrompt }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 800, thinkingConfig: { thinkingBudget: 0 } } }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "p08GeminiKey",
+          "name": "P08 Gemini API Key"
+        }
+      },
+      "notes": "Header Auth credential: name x-goog-api-key. On failure the flow continues with the rule-based report."
+    },
+    {
+      "id": "n-select",
+      "name": "Select Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        100
+      ],
+      "parameters": {
+        "jsCode": "// ---- src/p08-engine.js (embedded by scripts/build-workflow.js — edit the source file, then rebuild) ----\nconst P08 = (function () { const module = { exports: {} };\n/**\n * P08 — AI Project Manager: deterministic health/risk engine.\n *\n * Pure JavaScript, no dependencies. The same file is:\n *   - required by the Node test suite and local scripts, and\n *   - embedded verbatim into the n8n \"Risk Engine\" Code node by scripts/build-workflow.js.\n *\n * Health is decided ONLY by the rules in this file. The AI layer receives the\n * already-calculated facts and may only rephrase them.\n */\n'use strict';\n\nconst HEALTH = Object.freeze({\n  OVERDUE: 'OVERDUE',\n  BLOCKED: 'BLOCKED',\n  AT_RISK: 'AT RISK',\n  ON_TRACK: 'ON TRACK',\n  DONE: 'DONE',\n});\n\nconst HEALTH_RANK = { OVERDUE: 4, BLOCKED: 3, 'AT RISK': 2, 'ON TRACK': 1, DONE: 0 };\nconst PRIORITY_RANK = { Critical: 4, High: 3, Medium: 2, Low: 1 };\nconst SEVERITY_RANK = { critical: 3, high: 2, medium: 1, info: 0 };\n\nconst DEFAULT_CONFIG = Object.freeze({\n  staleDays: 7, // no card activity for more than N days -> missing update\n  staleCriticalDays: 14, // escalates the missing-update flag to high severity\n  dueSoonDays: 7, // deadline within N days while still in an early list\n  hoursOverHighPct: 20, // actual hours above estimate by more than N% -> high severity\n  doneLists: ['Done'],\n  blockedLists: ['Blocked'],\n  notStartedLists: ['Backlog', 'To Do'],\n});\n\n// Custom field names expected on the Trello board (see docs/TRELLO-SETUP.md).\nconst FIELD = Object.freeze({\n  OWNER: 'Owner',\n  PRIORITY: 'Priority',\n  ESTIMATED_HOURS: 'Estimated Hours',\n  ACTUAL_HOURS: 'Actual Hours',\n  BLOCKER: 'Blocker',\n  DEPENDENCY: 'Dependency',\n  RISK_LEVEL: 'Risk Level',\n  NEXT_MILESTONE: 'Next Milestone',\n  DECISION_REQUIRED: 'Decision Required',\n});\n\nconst DAY_MS = 24 * 60 * 60 * 1000;\n\nfunction toDateOnly(value) {\n  if (value === null || value === undefined || value === '') return null;\n  const d = new Date(value);\n  if (Number.isNaN(d.getTime())) return null;\n  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());\n}\n\nfunction cleanText(value) {\n  if (value === null || value === undefined) return '';\n  return String(value).replace(/\\s+/g, ' ').trim();\n}\n\nfunction toNumber(value) {\n  if (value === null || value === undefined || value === '') return null;\n  const n = Number(value);\n  return Number.isFinite(n) && n >= 0 ? n : null;\n}\n\n/**\n * Convert raw Trello API responses into normalized project records.\n * @param {{cards: object[], lists: object[], customFields: object[]}} board\n */\nfunction fromTrello(board) {\n  if (!board || !Array.isArray(board.cards)) {\n    throw new Error('fromTrello: expected { cards: [], lists: [], customFields: [] }');\n  }\n  const lists = Array.isArray(board.lists) ? board.lists : [];\n  const customFields = Array.isArray(board.customFields) ? board.customFields : [];\n\n  const listName = new Map(lists.map((l) => [l.id, cleanText(l.name)]));\n  const fieldDefs = new Map(customFields.map((f) => [f.id, f]));\n\n  return board.cards\n    .filter((card) => card && !card.closed)\n    .map((card) => {\n      const values = {};\n      for (const item of card.customFieldItems || []) {\n        const def = fieldDefs.get(item.idCustomField);\n        if (!def) continue;\n        values[cleanText(def.name)] = readCustomFieldValue(def, item);\n      }\n      return {\n        id: card.id,\n        project: cleanText(card.name),\n        url: card.shortUrl || card.url || '',\n        status: listName.get(card.idList) || 'Unknown list',\n        owner: cleanText(values[FIELD.OWNER]),\n        priority: cleanText(values[FIELD.PRIORITY]),\n        deadline: card.due || null,\n        deadlineComplete: Boolean(card.dueComplete),\n        estimatedHours: toNumber(values[FIELD.ESTIMATED_HOURS]),\n        actualHours: toNumber(values[FIELD.ACTUAL_HOURS]),\n        blocker: cleanText(values[FIELD.BLOCKER]),\n        dependency: cleanText(values[FIELD.DEPENDENCY]),\n        riskLevel: cleanText(values[FIELD.RISK_LEVEL]),\n        nextMilestone: cleanText(values[FIELD.NEXT_MILESTONE]),\n        decisionRequired: cleanText(values[FIELD.DECISION_REQUIRED]),\n        lastActivity: card.dateLastActivity || null,\n      };\n    });\n}\n\nfunction readCustomFieldValue(def, item) {\n  if (def.type === 'list') {\n    const option = (def.options || []).find((o) => o.id === item.idValue);\n    return option && option.value ? option.value.text : '';\n  }\n  const v = item.value || {};\n  if (def.type === 'number') return v.number;\n  if (def.type === 'checkbox') return v.checked === 'true' ? 'Yes' : '';\n  if (def.type === 'date') return v.date;\n  return v.text;\n}\n\nfunction flag(code, severity, message) {\n  return { code, severity, message };\n}\n\nfunction fmtDate(ms) {\n  return ms === null ? 'none' : new Date(ms).toISOString().slice(0, 10);\n}\n\n/**\n * Evaluate project health. Deterministic: same input + asOf => same output.\n * @param {object[]} projects normalized records (see fromTrello)\n * @param {{asOf?: string|Date, config?: object}} options\n */\nfunction evaluate(projects, options = {}) {\n  if (!Array.isArray(projects)) throw new Error('evaluate: projects must be an array');\n  const cfg = Object.assign({}, DEFAULT_CONFIG, options.config || {});\n  const asOfMs = toDateOnly(options.asOf || new Date());\n  if (asOfMs === null) throw new Error('evaluate: invalid asOf date');\n\n  const isDone = (p) => cfg.doneLists.includes(p.status) || p.deadlineComplete === true;\n\n  // Pass 1: rules that depend only on the card itself.\n  const evaluated = projects.map((raw) => {\n    // Re-sanitize: records may come from sources other than fromTrello().\n    const p = Object.assign({}, raw, {\n      project: cleanText(raw.project),\n      status: cleanText(raw.status),\n      owner: cleanText(raw.owner),\n      priority: cleanText(raw.priority),\n      blocker: cleanText(raw.blocker),\n      dependency: cleanText(raw.dependency),\n      riskLevel: cleanText(raw.riskLevel),\n      nextMilestone: cleanText(raw.nextMilestone),\n      decisionRequired: cleanText(raw.decisionRequired),\n      estimatedHours: toNumber(raw.estimatedHours),\n      actualHours: toNumber(raw.actualHours),\n    });\n    const flags = [];\n    const due = toDateOnly(p.deadline);\n    const done = isDone(p);\n    const daysToDeadline = due === null ? null : Math.round((due - asOfMs) / DAY_MS);\n    const last = toDateOnly(p.lastActivity);\n    const daysSinceUpdate = last === null ? null : Math.round((asOfMs - last) / DAY_MS);\n\n    if (!done) {\n      if (due !== null && due < asOfMs) {\n        flags.push(flag('OVERDUE', 'critical', `Deadline ${fmtDate(due)} passed ${-daysToDeadline} day(s) ago`));\n      }\n      if (cfg.blockedLists.includes(p.status) || p.blocker) {\n        flags.push(flag('BLOCKED', 'critical', p.blocker ? `Blocker: ${p.blocker}` : `Card sits in \"${p.status}\" list`));\n      }\n      if (\n        due !== null &&\n        daysToDeadline >= 0 &&\n        daysToDeadline <= cfg.dueSoonDays &&\n        cfg.notStartedLists.includes(p.status)\n      ) {\n        flags.push(flag('DUE_SOON_NOT_STARTED', 'high', `Due in ${daysToDeadline} day(s) but still in \"${p.status}\"`));\n      }\n      if (p.estimatedHours !== null && p.actualHours !== null && p.estimatedHours > 0 && p.actualHours > p.estimatedHours) {\n        const overPct = Math.round(((p.actualHours - p.estimatedHours) / p.estimatedHours) * 100);\n        flags.push(\n          flag(\n            'HOURS_OVER_ESTIMATE',\n            overPct > cfg.hoursOverHighPct ? 'high' : 'medium',\n            `${p.actualHours}h logged vs ${p.estimatedHours}h estimated (+${overPct}%)`\n          )\n        );\n      }\n      if (daysSinceUpdate === null) {\n        flags.push(flag('MISSING_UPDATE', 'medium', 'No activity date recorded'));\n      } else if (daysSinceUpdate > cfg.staleDays) {\n        flags.push(\n          flag(\n            'MISSING_UPDATE',\n            daysSinceUpdate > cfg.staleCriticalDays ? 'high' : 'medium',\n            `No update for ${daysSinceUpdate} days`\n          )\n        );\n      }\n      const missing = [];\n      if (!p.owner) missing.push('Owner');\n      if (due === null) missing.push('Deadline');\n      if (!p.priority) missing.push('Priority');\n      if (p.estimatedHours === null) missing.push('Estimated Hours');\n      if (missing.length) {\n        flags.push(flag('MISSING_FIELDS', 'medium', `Missing: ${missing.join(', ')}`));\n      }\n      if (p.riskLevel === 'High') {\n        flags.push(flag('OWNER_REPORTED_HIGH_RISK', 'medium', 'Owner marked Risk Level = High'));\n      }\n    }\n\n    return Object.assign({}, p, { done, due, daysToDeadline, daysSinceUpdate, flags });\n  });\n\n  // Pass 2: dependency rules (need every card's pass-1 state).\n  const byName = new Map(evaluated.map((p) => [p.project.toLowerCase(), p]));\n  for (const p of evaluated) {\n    if (p.done || !p.dependency) continue;\n    const dep = byName.get(p.dependency.toLowerCase());\n    if (!dep) {\n      p.flags.push(flag('DEPENDENCY_NOT_FOUND', 'high', `Dependency \"${p.dependency}\" does not match any card on the board`));\n      continue;\n    }\n    if (dep === p) {\n      p.flags.push(flag('DEPENDENCY_NOT_FOUND', 'high', 'Card lists itself as its dependency'));\n      continue;\n    }\n    if (dep.done) continue;\n    const depCritical = dep.flags.filter((f) => f.code === 'OVERDUE' || f.code === 'BLOCKED').map((f) => f.code);\n    if (depCritical.length) {\n      p.flags.push(flag('DEPENDENCY_AT_RISK', 'high', `Depends on \"${dep.project}\", which is ${depCritical.join(' + ')}`));\n    } else if (p.due !== null && (dep.due === null || dep.due > p.due)) {\n      p.flags.push(\n        flag(\n          'DEPENDENCY_LATE',\n          'high',\n          `Depends on \"${dep.project}\" (due ${fmtDate(dep.due)}), which finishes after this deadline (${fmtDate(p.due)})`\n        )\n      );\n    }\n  }\n\n  // Health decision: fixed precedence, no AI involvement.\n  const results = evaluated.map((p) => {\n    let health;\n    const codes = new Set(p.flags.map((f) => f.code));\n    if (p.done) health = HEALTH.DONE;\n    else if (codes.has('OVERDUE')) health = HEALTH.OVERDUE;\n    else if (codes.has('BLOCKED')) health = HEALTH.BLOCKED;\n    else if (p.flags.length) health = HEALTH.AT_RISK;\n    else health = HEALTH.ON_TRACK;\n\n    p.flags.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);\n    const score =\n      HEALTH_RANK[health] * 100 +\n      (PRIORITY_RANK[p.priority] || 0) * 10 +\n      Math.min(p.flags.length, 9);\n\n    return {\n      id: p.id,\n      project: p.project,\n      url: p.url,\n      status: p.status,\n      owner: p.owner || null,\n      priority: p.priority || null,\n      deadline: p.due === null ? null : fmtDate(p.due),\n      daysToDeadline: p.daysToDeadline,\n      estimatedHours: p.estimatedHours,\n      actualHours: p.actualHours,\n      blocker: p.blocker || null,\n      dependency: p.dependency || null,\n      riskLevel: p.riskLevel || null,\n      nextMilestone: p.nextMilestone || null,\n      decisionRequired: p.decisionRequired || null,\n      daysSinceUpdate: p.daysSinceUpdate,\n      health,\n      flags: p.flags,\n      score,\n    };\n  });\n\n  results.sort((a, b) => b.score - a.score || a.project.localeCompare(b.project));\n\n  const active = results.filter((r) => r.health !== HEALTH.DONE);\n  const count = (h) => active.filter((r) => r.health === h).length;\n  const flagCount = (code) => active.filter((r) => r.flags.some((f) => f.code === code)).length;\n  const est = active.reduce((s, r) => s + (r.estimatedHours || 0), 0);\n  const act = active.reduce((s, r) => s + (r.actualHours || 0), 0);\n\n  return {\n    asOf: fmtDate(asOfMs),\n    config: cfg,\n    summary: {\n      totalCards: results.length,\n      active: active.length,\n      done: results.length - active.length,\n      overdue: count(HEALTH.OVERDUE),\n      blocked: count(HEALTH.BLOCKED),\n      atRisk: count(HEALTH.AT_RISK),\n      onTrack: count(HEALTH.ON_TRACK),\n      missingUpdates: flagCount('MISSING_UPDATE'),\n      hoursOverEstimate: flagCount('HOURS_OVER_ESTIMATE'),\n      dependencyIssues: active.filter((r) => r.flags.some((f) => f.code.startsWith('DEPENDENCY_'))).length,\n      decisionsRequired: active.filter((r) => r.decisionRequired).length,\n      estimatedHours: est,\n      actualHours: act,\n    },\n    projects: results,\n  };\n}\n\n/** Plain-text, rule-based founder report. Always available; used when AI is unavailable or rejected. */\nfunction buildRuleReport(result) {\n  const s = result.summary;\n  const active = result.projects.filter((p) => p.health !== HEALTH.DONE);\n  const lines = [];\n  lines.push(`Portfolio health — ${result.asOf}`);\n  lines.push(\n    `${s.active} active: ${s.overdue} overdue, ${s.blocked} blocked, ${s.atRisk} at risk, ${s.onTrack} on track. ${s.done} done.`\n  );\n  const critical = active.filter((p) => p.health === HEALTH.OVERDUE || p.health === HEALTH.BLOCKED);\n  if (critical.length) {\n    lines.push('');\n    lines.push('Needs action now:');\n    for (const p of critical) {\n      lines.push(`- ${p.project} [${p.health}] (${p.owner || 'no owner'}): ${p.flags[0].message}`);\n    }\n  }\n  const risk = active.filter((p) => p.health === HEALTH.AT_RISK);\n  if (risk.length) {\n    lines.push('');\n    lines.push('At risk:');\n    for (const p of risk) {\n      lines.push(`- ${p.project} (${p.owner || 'no owner'}): ${p.flags.map((f) => f.message).slice(0, 2).join('; ')}`);\n    }\n  }\n  const decisions = active.filter((p) => p.decisionRequired);\n  if (decisions.length) {\n    lines.push('');\n    lines.push('Decisions required from you:');\n    for (const p of decisions) lines.push(`- ${p.project}: ${p.decisionRequired}`);\n  }\n  const ok = active.filter((p) => p.health === HEALTH.ON_TRACK);\n  if (ok.length) {\n    lines.push('');\n    lines.push(`On track: ${ok.map((p) => p.project).join(', ')}`);\n  }\n  return lines.join('\\n');\n}\n\n/** Prompt for the AI layer. Facts are passed as JSON; the model may not change them. */\nfunction buildAiPrompt(result) {\n  const facts = {\n    asOf: result.asOf,\n    summary: result.summary,\n    projects: result.projects\n      .filter((p) => p.health !== HEALTH.DONE)\n      .map((p) => ({\n        project: p.project,\n        health: p.health,\n        owner: p.owner,\n        priority: p.priority,\n        deadline: p.deadline,\n        nextMilestone: p.nextMilestone,\n        decisionRequired: p.decisionRequired,\n        issues: p.flags.map((f) => f.message),\n      })),\n  };\n  return [\n    'You write a weekly portfolio status note for a company founder.',\n    'The health status of every project has ALREADY been decided by deterministic rules. Treat it as fixed fact.',\n    'Rules:',\n    '- Never change, upgrade, downgrade or re-judge any health status.',\n    '- Use only the facts in the JSON. Do not invent numbers, dates, people, causes or outcomes.',\n    '- Mention every project whose health is OVERDUE or BLOCKED by its exact name.',\n    '- Plain text only, no markdown symbols such as ** or #. Maximum 170 words.',\n    'Structure: one-line headline; \"Act now\" (overdue/blocked, with the specific issue); \"Watch\" (at risk);',\n    '\"Decisions for you\" (only if decisionRequired is set); one closing line on what is on track.',\n    '',\n    'FACTS:',\n    JSON.stringify(facts),\n  ].join('\\n');\n}\n\n/**\n * Guardrail on the AI output. Rejects empty/oversized text, missing critical\n * projects, or any health label that contradicts the rule engine.\n */\nfunction validateAiReport(text, result) {\n  const t = cleanText(text);\n  if (!t) return { ok: false, reason: 'empty AI response' };\n  if (t.length > 2500) return { ok: false, reason: 'AI response too long' };\n  const active = result.projects.filter((p) => p.health !== HEALTH.DONE);\n  for (const p of active) {\n    if ((p.health === HEALTH.OVERDUE || p.health === HEALTH.BLOCKED) && !t.toLowerCase().includes(p.project.toLowerCase())) {\n      return { ok: false, reason: `AI response omitted critical project \"${p.project}\"` };\n    }\n  }\n  // A project described with a better health than the rules gave it is a contradiction.\n  for (const p of active) {\n    if (p.health === HEALTH.ON_TRACK) continue;\n    const re = new RegExp(escapeRegExp(p.project) + '[^.\\\\n]{0,40}\\\\bon track\\\\b', 'i');\n    if (re.test(t)) return { ok: false, reason: `AI response calls \"${p.project}\" on track, rules say ${p.health}` };\n  }\n  return { ok: true, reason: 'passed guardrails' };\n}\n\nfunction escapeRegExp(s) {\n  return s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n}\n\nfunction escapeHtml(s) {\n  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\n/** Telegram HTML message (<= 4096 chars). */\nfunction buildTelegramMessage(reportText, result, source) {\n  const s = result.summary;\n  const header =\n    `<b>P08 Project Health — ${escapeHtml(result.asOf)}</b>\\n` +\n    `🔴 Overdue ${s.overdue}  ⛔ Blocked ${s.blocked}  🟠 At risk ${s.atRisk}  🟢 On track ${s.onTrack}\\n` +\n    `<i>Status decided by rules · report by ${source === 'ai' ? 'Gemini' : 'rule engine (AI fallback)'}</i>\\n\\n`;\n  let body = escapeHtml(reportText);\n  const max = 4096 - header.length - 20;\n  if (body.length > max) body = body.slice(0, max) + '\\n…';\n  return header + body;\n}\n\nconst P08 = {\n  HEALTH,\n  FIELD,\n  DEFAULT_CONFIG,\n  fromTrello,\n  evaluate,\n  buildRuleReport,\n  buildAiPrompt,\n  validateAiReport,\n  buildTelegramMessage,\n};\n\nif (typeof module !== 'undefined' && module.exports) module.exports = P08;\n\nreturn module.exports; })();\n// ---- node logic ----\nconst cfg = $('Config').first().json;\nconst engine = $('Risk Engine').first().json;\nconst ai = $input.first().json || {};\nlet source = 'rules';\nlet reason;\nlet reportText = engine.ruleReport;\n\nif (String(cfg.aiEnabled) !== 'true') {\n  reason = 'AI disabled in Config';\n} else if (ai.error) {\n  reason = 'Gemini request failed: ' + String(ai.error.message || JSON.stringify(ai.error)).slice(0, 200);\n} else {\n  const parts = (((ai.candidates || [])[0] || {}).content || {}).parts || [];\n  const text = parts.map((p) => p.text || '').join('').trim();\n  const check = P08.validateAiReport(text, engine.result);\n  if (check.ok) { source = 'ai'; reportText = text; }\n  reason = check.reason;\n}\n\nreturn [{ json: {\n  source,\n  reason,\n  reportText,\n  ruleReport: engine.ruleReport,\n  telegramText: P08.buildTelegramMessage(reportText, engine.result, source),\n  summary: engine.result.summary,\n  result: engine.result,\n} }];"
+      },
+      "notes": "Uses the AI text only if it passes guardrails; otherwise the rule-based report."
+    },
+    {
+      "id": "n-telegram",
+      "name": "Telegram: Notify Founder",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1920,
+        100
+      ],
+      "parameters": {
+        "chatId": "={{ $('Config').first().json.telegramChatId }}",
+        "text": "={{ $json.telegramText }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "p08TelegramBot",
+          "name": "P08 Telegram Bot"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    }
+  ],
+  "connections": {
+    "Run Now": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekdays 08:00": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Trello: Get Lists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trello: Get Lists": {
+      "main": [
+        [
+          {
+            "node": "Trello: Get Custom Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trello: Get Custom Fields": {
+      "main": [
+        [
+          {
+            "node": "Trello: Get Cards",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trello: Get Cards": {
+      "main": [
+        [
+          {
+            "node": "Risk Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Engine": {
+      "main": [
+        [
+          {
+            "node": "Gemini: Founder Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini: Founder Report": {
+      "main": [
+        [
+          {
+            "node": "Select Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Report": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Notify Founder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Riyadh"
+  },
+  "pinData": {}
+}

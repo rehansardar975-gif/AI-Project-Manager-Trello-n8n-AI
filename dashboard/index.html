@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P08 Portfolio Health</title>
+<link rel="stylesheet" href="../assets/p08.css">
+<style>
+  .top{background:var(--navy);color:#fff;padding:22px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;position:relative;overflow:hidden}
+  .top::after{content:"";position:absolute;right:-120px;top:-160px;width:420px;height:420px;border-radius:50%;background:radial-gradient(var(--teal-glow),transparent 65%)}
+  .brand{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+  .logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--teal),var(--teal-d));display:grid;place-items:center;font:800 15px var(--head);color:var(--navy)}
+  .top h1{font-size:22px}.top .sub{color:#94A3B8;font-size:13px;margin-top:2px}
+  .meta{display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1}
+  main{padding:24px 32px 32px;max-width:1600px;margin:0 auto}
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:20px}
+  .kpi{padding:16px 18px}.kpi .n{font:800 34px var(--head);margin-top:6px}.kpi .d{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .kpi.r .n{color:var(--red)}.kpi.p .n{color:var(--purple)}.kpi.a .n{color:var(--amber)}.kpi.g .n{color:var(--green)}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px;align-items:start}
+  .card h2{font-size:16px}.card-h{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 14px;background:#F8FAFC;border-bottom:1px solid var(--line)}
+  td{padding:11px 14px;border-bottom:1px solid #EEF2F6;vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  .pname{font-weight:600}.pmeta{color:var(--muted);font-size:12px;margin-top:2px}
+  .issue{color:var(--ink-2);font-size:12.5px;line-height:1.45}
+  .hours{font:500 12px var(--mono);color:var(--ink-2)}.bar{height:5px;background:#E2E8F0;border-radius:3px;margin-top:5px;width:90px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--teal-d)}.bar i.over{background:var(--red)}
+  .dl{white-space:nowrap}.dl.late{color:var(--red);font-weight:600}td.lst{white-space:nowrap}
+  .report{padding:18px 20px;font-size:13.5px;line-height:1.6;white-space:pre-wrap;color:var(--ink-2)}
+  .side{display:flex;flex-direction:column;gap:20px}
+  .sig{display:flex;justify-content:space-between;padding:11px 20px;border-bottom:1px solid #EEF2F6;font-size:13.5px}.sig:last-child{border:0}
+  .sig b{font:700 14px var(--mono)}
+  .rule{padding:12px 20px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line)}
+  @media (max-width:1100px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:640px){main{padding:16px}.top{padding:18px 16px}.kpis{grid-template-columns:repeat(2,1fr)}.hide-sm{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="logo">P08</div><div><h1>Portfolio Health</h1><div class="sub" id="sub"></div></div></div>
+  <div class="meta"><span class="chip dark">TRELLO · SOURCE OF TRUTH</span><span class="chip dark">STATUS: RULE ENGINE</span><span class="chip dark" id="reportsrc"></span></div>
+</header>
+<main>
+  <section class="kpis" id="kpis"></section>
+  <section class="grid">
+    <div class="card">
+      <div class="card-h"><h2>Projects by severity</h2><span class="label" id="count"></span></div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Project</th><th>Health</th><th class="hide-sm">List</th><th>Deadline</th><th class="hide-sm">Hours</th><th>Why</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+    </div>
+    <aside class="side">
+      <div class="card"><div class="card-h"><h2>Founder report</h2><span class="chip teal">RULE-BASED</span></div><div class="report" id="report"></div></div>
+      <div class="card"><div class="card-h"><h2>Risk signals</h2><span class="label">active cards</span></div><div id="signals"></div>
+        <div class="rule">Health precedence: OVERDUE › BLOCKED › AT RISK › ON TRACK. AI writes the summary only; it never sets status.</div></div>
+    </aside>
+  </section>
+</main>
+<script src="data.js"></script>
+<script>
+(function () {
+  var D = window.P08_DATA, r = D.result, s = r.summary;
+  var cls = { 'OVERDUE': 'overdue', 'BLOCKED': 'blocked', 'AT RISK': 'atrisk', 'ON TRACK': 'ontrack', 'DONE': 'done' };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  document.getElementById('sub').textContent = 'As of ' + r.asOf + ' · ' + D.generatedFrom;
+  document.getElementById('reportsrc').textContent = 'REPORT: RULES (AI FALLBACK READY)';
+  var k = [['Active cards', s.active, '', s.done + ' done'], ['Overdue', s.overdue, 'r', 'deadline passed'], ['Blocked', s.blocked, 'p', 'blocker recorded'],
+           ['At risk', s.atRisk, 'a', 'one or more signals'], ['On track', s.onTrack, 'g', 'no signals'], ['Decisions', s.decisionsRequired, '', 'waiting on founder']];
+  document.getElementById('kpis').innerHTML = k.map(function (x) {
+    return '<div class="card kpi ' + x[2] + '"><div class="label">' + x[0] + '</div><div class="n">' + x[1] + '</div><div class="d">' + x[3] + '</div></div>';
+  }).join('');
+  document.getElementById('count').textContent = r.projects.length + ' cards';
+  document.getElementById('rows').innerHTML = r.projects.map(function (p) {
+    var pct = p.estimatedHours ? Math.min(100, Math.round(100 * (p.actualHours || 0) / p.estimatedHours)) : 0;
+    var over = p.estimatedHours && p.actualHours > p.estimatedHours;
+    var why = p.flags.length ? p.flags.slice(0, 2).map(function (f) { return esc(f.message); }).join('<br>') : (p.health === 'DONE' ? 'Completed' : 'No rule triggered');
+    return '<tr><td><div class="pname">' + esc(p.project) + '</div><div class="pmeta">' + esc(p.owner || 'No owner') + ' · ' + esc(p.priority || 'No priority') + '</div></td>' +
+      '<td><span class="chip ' + cls[p.health] + '">' + p.health + '</span></td>' +
+      '<td class="hide-sm lst">' + esc(p.status) + '</td>' +
+      '<td class="mono dl' + (p.health === 'OVERDUE' ? ' late' : '') + '" style="font-size:12.5px">' + esc(p.deadline || '—') + '</td>' +
+      '<td class="hide-sm"><div class="hours">' + (p.actualHours ?? '—') + ' / ' + (p.estimatedHours ?? '—') + 'h</div><div class="bar"><i class="' + (over ? 'over' : '') + '" style="width:' + pct + '%"></i></div></td>' +
+      '<td class="issue">' + why + '</td></tr>';
+  }).join('');
+  document.getElementById('report').textContent = D.report;
+  var sig = [['Overdue', s.overdue], ['Blocked', s.blocked], ['Missing updates (> 7 days)', s.missingUpdates], ['Hours over estimate', s.hoursOverEstimate],
+             ['Dependency issues', s.dependencyIssues], ['Decisions required', s.decisionsRequired], ['Hours logged / estimated', s.actualHours + ' / ' + s.estimatedHours]];
+  document.getElementById('signals').innerHTML = sig.map(function (x) { return '<div class="sig"><span>' + x[0] + '</span><b>' + x[1] + '</b></div>'; }).join('');
+})();
+</script>
+</body>
+</html>
